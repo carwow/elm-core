@@ -12,7 +12,7 @@ module Core.Notifier exposing (subscriptions, view, Model, update, Msg(NewNotifi
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, property)
 import Http exposing (request)
-import CarwowTheme.Drawer as Drawer exposing (Model, Properties, Msg(Toggle), init, view)
+import CarwowTheme.Drawer as Drawer exposing (Model, Properties, Msg(Toggle), init, view, Action(Open, Close))
 import RemoteData exposing (RemoteData, WebData, sendRequest, update)
 import Json.Encode as Encode
 
@@ -52,7 +52,7 @@ init flags =
         model =
             Model flags RemoteData.NotAsked drawer
     in
-        ( model, (getNotifications model.flags.notifierApiEndpoint) )
+        ( model, Cmd.none )
 
 
 {-| Placeholder
@@ -74,10 +74,13 @@ view model =
         drawerProperties =
             Drawer.Properties body title
 
-        toggleMsg =
-            DrawerMsg Drawer.Toggle
+        toggleOpenMsg =
+            DrawerMsg (Drawer.Toggle Drawer.Open)
+
+        toggleCloseMsg =
+            DrawerMsg (Drawer.Toggle Drawer.Close)
     in
-        Drawer.view model.drawer drawerProperties toggleMsg
+        Drawer.view model.drawer drawerProperties toggleOpenMsg toggleCloseMsg
 
 
 notificationsView : String -> Html Msg
@@ -103,10 +106,26 @@ update action model =
 
         DrawerMsg message ->
             let
-                ( newDrawer, newCmd ) =
+                ( newDrawer, drawerCmd ) =
                     Drawer.update message model.drawer
+
+                newModel =
+                    { model | drawer = newDrawer }
+
+                notifierCmd =
+                    case message of
+                        Drawer.Toggle Drawer.Open ->
+                            getNotifications model.flags.notifierApiEndpoint
+
+                        _ ->
+                            Cmd.none
             in
-                ( { model | drawer = newDrawer }, Cmd.none )
+                ( newModel
+                , Cmd.batch
+                    [ Cmd.map DrawerMsg drawerCmd
+                    , notifierCmd
+                    ]
+                )
 
 
 getNotifications : String -> Cmd Msg
