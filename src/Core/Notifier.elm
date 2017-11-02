@@ -52,7 +52,7 @@ init flags =
         model =
             Model flags RemoteData.NotAsked drawer
     in
-        ( model, (getNotifications model.flags.notifierApiEndpoint) )
+        ( model, Cmd.none )
 
 
 {-| Placeholder
@@ -74,10 +74,13 @@ view model =
         drawerProperties =
             Drawer.Properties body title
 
-        toggleMsg =
-            DrawerMsg Drawer.Toggle
+        toggleOpenMsg =
+            DrawerMsg (Drawer.Toggle True)
+
+        toggleCloseMsg =
+            DrawerMsg (Drawer.Toggle False)
     in
-        Drawer.view model.drawer drawerProperties toggleMsg
+        Drawer.view model.drawer drawerProperties toggleOpenMsg toggleCloseMsg
 
 
 notificationsView : String -> Html Msg
@@ -103,10 +106,18 @@ update action model =
 
         DrawerMsg message ->
             let
-                ( newDrawer, newCmd ) =
+                ( newDrawer, drawerCmd ) =
                     Drawer.update message model.drawer
+
+                ( newModel, notifierCmd ) =
+                    case message of
+                        Drawer.Toggle True ->
+                            ( { model | drawer = newDrawer }, (getNotifications model.flags.notifierApiEndpoint) )
+
+                        _ ->
+                            ( model, Cmd.none )
             in
-                ( { model | drawer = newDrawer }, Cmd.none )
+                ( newModel, Cmd.batch [ Cmd.map DrawerMsg drawerCmd, drawerCmd ] )
 
 
 getNotifications : String -> Cmd Msg
