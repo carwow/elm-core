@@ -17,6 +17,6 @@ jobs:
       # specify any bash command here prefixed with `run: `
       - run: elm make --yes
 
-test:
-  override:
-    - "true"
+  test:
+    override:
+      - "true"
