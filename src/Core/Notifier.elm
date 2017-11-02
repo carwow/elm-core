@@ -12,7 +12,7 @@ module Core.Notifier exposing (subscriptions, view, Model, update, Msg(NewNotifi
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, property)
 import Http exposing (request)
-import CarwowTheme.Drawer as Drawer exposing (Model, Properties, Msg(Toggle), init, view)
+import CarwowTheme.Drawer as Drawer exposing (Model, Properties, Msg(Toggle), init, view, Action(Open, Close))
 import RemoteData exposing (RemoteData, WebData, sendRequest, update)
 import Json.Encode as Encode
 
@@ -75,10 +75,10 @@ view model =
             Drawer.Properties body title
 
         toggleOpenMsg =
-            DrawerMsg (Drawer.Toggle True)
+            DrawerMsg (Drawer.Toggle Drawer.Open)
 
         toggleCloseMsg =
-            DrawerMsg (Drawer.Toggle False)
+            DrawerMsg (Drawer.Toggle Drawer.Close)
     in
         Drawer.view model.drawer drawerProperties toggleOpenMsg toggleCloseMsg
 
@@ -111,13 +111,13 @@ update action model =
 
                 ( newModel, notifierCmd ) =
                     case message of
-                        Drawer.Toggle True ->
+                        Drawer.Toggle Drawer.Open ->
                             ( { model | drawer = newDrawer }, (getNotifications model.flags.notifierApiEndpoint) )
 
                         _ ->
                             ( model, Cmd.none )
             in
-                ( newModel, Cmd.batch [ Cmd.map DrawerMsg drawerCmd, drawerCmd ] )
+                ( newModel, Cmd.batch [ Cmd.map DrawerMsg drawerCmd, notifierCmd ] )
 
 
 getNotifications : String -> Cmd Msg
