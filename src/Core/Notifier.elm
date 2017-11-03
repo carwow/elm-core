@@ -109,15 +109,23 @@ update action model =
                 ( newDrawer, drawerCmd ) =
                     Drawer.update message model.drawer
 
-                ( newModel, notifierCmd ) =
+                newModel =
+                    { model | drawer = newDrawer }
+
+                notifierCmd =
                     case message of
                         Drawer.Toggle Drawer.Open ->
-                            ( { model | drawer = newDrawer }, (getNotifications model.flags.notifierApiEndpoint) )
+                            getNotifications model.flags.notifierApiEndpoint
 
                         _ ->
-                            ( model, Cmd.none )
+                            Cmd.none
             in
-                ( newModel, Cmd.batch [ Cmd.map DrawerMsg drawerCmd, notifierCmd ] )
+                ( newModel
+                , Cmd.batch
+                    [ Cmd.map DrawerMsg drawerCmd
+                    , notifierCmd
+                    ]
+                )
 
 
 getNotifications : String -> Cmd Msg
