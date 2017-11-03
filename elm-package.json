@@ -1,5 +1,5 @@
 {
-    "version": "2.0.0",
+    "version": "1.0.1",
     "summary": "Elm components used by carwow",
     "repository": "https://github.com/carwow/elm-core.git",
     "license": "BSD3",
