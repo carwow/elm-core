@@ -1,61 +1,90 @@
-module Core.NotificationAlerts exposing (..)
+module Core.NotificationAlerts exposing (Msg(UpdateBadge), init, view, update, Model)
 
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Svg exposing (..)
-import Svg.Attributes exposing (..)
+{-| Displays notification alerts
+
+
+# Exported
+
+@docs view, Model, update, Msg, init
+
+-}
+
+import Html exposing (text, span, label, i, Html)
+import Html.Attributes exposing (for)
+import Html.Events exposing (onClick)
+import Svg exposing (text)
+import Svg.Attributes exposing (class)
 import CarwowTheme.Icons exposing (icon)
-import Json.Decode exposing (..)
+import Json.Decode exposing (int, Decoder, decodeValue, field)
 
 
+{-| Placeholder
+-}
 type alias Model =
-    { unreadCount : Maybe Int }
+    { unseenCount : Maybe Int }
 
 
+{-| Placeholder
+-}
 type Msg
-    = UpdateCounter Json.Decode.Value
+    = UpdateBadge Json.Decode.Value
+    | ClearBadge
 
 
+{-| Placeholder
+-}
 init : ( Model, Cmd Msg )
 init =
     ( (Model Nothing), Cmd.none )
 
 
-unreadDecoder : Decoder Int
-unreadDecoder =
-    field "unread_count" int
+decoder : Decoder Int
+decoder =
+    field "unseen_count" int
 
 
+decodeResponse : Json.Decode.Value -> Result String Int
+decodeResponse json =
+    decodeValue decoder json
+
+
+{-| Placeholder
+-}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        UpdateCounter pushedData ->
-            let
-                result =
-                    decodeValue unreadDecoder pushedData
-            in
-                case result of
-                    Ok count ->
-                        ( { model | unreadCount = Just count }, Cmd.none )
+        UpdateBadge json ->
+            case decodeResponse json of
+                Ok count ->
+                    ( { model | unseenCount = Just count }, Cmd.none )
 
-                    Err _ ->
-                        ( model, Cmd.none )
+                Err _ ->
+                    ( model, Cmd.none )
+
+        ClearBadge ->
+            ( { model | unseenCount = Nothing }, Cmd.none )
 
 
+{-| Placeholder
+-}
 view : Model -> Html Msg
 view model =
-    label [ Svg.Attributes.class "main-header-menu-link main-header-menu-link--extra-padded", for "notifications-drawer-open" ]
-        [ badgeView model.unreadCount
-        , i [ Html.Attributes.class "icon" ] [ icon "bell" { size = "small", colour = "white", colouring = "outline" } ]
+    label
+        [ class "main-header-menu-link main-header-menu-link--extra-padded"
+        , for "notifications-drawer-open"
+        , onClick ClearBadge
+        ]
+        [ badgeView model.unseenCount
+        , i [ class "icon" ] [ icon "bell" { size = "small", colour = "white", colouring = "outline" } ]
         ]
 
 
 badgeView : Maybe Int -> Html Msg
-badgeView unreadCount =
-    case unreadCount of
+badgeView unseenCount =
+    case unseenCount of
         Just count ->
             span
-                [ Svg.Attributes.class "badge badge--regular badge-notification badge--small main-header-menu__badge" ]
+                [ class "badge badge--regular badge-notification badge--small main-header-menu__badge" ]
                 [ Svg.text (toString count) ]
 
         Nothing ->
