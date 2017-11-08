@@ -1,4 +1,4 @@
-module Core.NotificationAlerts exposing (Msg(UpdateBadge), init, view, update, Model)
+module Core.NotificationMenu exposing (Msg(UpdateBadge), init, view, update, Model)
 
 {-| Displays notification alerts
 
