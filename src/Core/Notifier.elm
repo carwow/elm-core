@@ -1,4 +1,4 @@
-module Core.Notifier exposing (subscriptions, view, Model, update, Msg(NewNotification), init, Flags)
+module Core.Notifier exposing (subscriptions, view, Model, update, Msg(NewNotification), init, Flags, Msg(DrawerMsg))
 
 {-| Displays latest notifications
 
