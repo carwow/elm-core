@@ -1,11 +1,11 @@
-module Core.Notifier exposing (subscriptions, view, Model, update, Msg(NewNotification, DrawerMsg), init, Flags)
+module Core.Notifier exposing (Msg(NewNotification, DrawerMsg), Model, Flags, subscriptions, view, update, init, drawerState)
 
 {-| Displays latest notifications
 
 
 # Exported
 
-@docs subscriptions, view, Model, update, Msg, init, Flags
+@docs Msg, Model, Flags, subscriptions, view, update, init, drawerState
 
 -}
 
@@ -17,7 +17,7 @@ import RemoteData exposing (RemoteData, WebData, sendRequest, update)
 import Json.Encode as Encode
 
 
-{-| Placeholder
+{-| A representation of the NotificationDrawer
 -}
 type alias Model =
     { flags : Flags
@@ -26,7 +26,12 @@ type alias Model =
     }
 
 
-{-| Placeholder
+{-| The different messages the Notification Drawer accepts
+
+NewNotification — A new notification has occured
+NotificationsResponse — A response has been received from the external notifications API
+DrawerMsg — An action has occured on the drawer element
+
 -}
 type Msg
     = NewNotification String
@@ -34,14 +39,14 @@ type Msg
     | DrawerMsg Drawer.Msg
 
 
-{-| Placeholder
+{-| A flag to represent the API endpoint to retreive notifications
 -}
 type alias Flags =
     { notifierApiEndpoint : String
     }
 
 
-{-| Placeholder
+{-| Initialise the model
 -}
 init : Flags -> ( Model, Cmd Msg )
 init flags =
@@ -55,7 +60,7 @@ init flags =
         ( model, Cmd.none )
 
 
-{-| Placeholder
+{-| The view for the notification drawer component
 -}
 view : Model -> Html Msg
 view model =
@@ -83,17 +88,31 @@ view model =
         Drawer.view model.drawer drawerProperties toggleOpenMsg toggleCloseMsg
 
 
+{-| Inserts the result of the notification response into the drawer
+-}
 notificationsView : String -> Html Msg
 notificationsView notifications =
     div [ property "innerHTML" (Encode.string notifications) ] []
 
 
+{-| Render a spinner view
+-}
 spinnerView : Html Msg
 spinnerView =
     div [ class "carwow-spinner carwow-spinner-centered" ] []
 
 
-{-| Placeholder
+{-| The current state of the drawer.
+
+Returns true if the drawer is opened, false if it isn't
+
+-}
+drawerState : Model -> Bool
+drawerState model =
+    model.drawer.state == Drawer.Opened
+
+
+{-| Update the model based on the message received
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
@@ -128,12 +147,17 @@ update action model =
                 )
 
 
+{-| Make a request to the endpoint representing the notifications
+
+Note: we request the HTML by default
+
+-}
 getNotifications : String -> Cmd Msg
 getNotifications endpoint =
     Http.request
         { method = "GET"
-        , headers = []
-        , url = (endpoint ++ "/notifications.html")
+        , headers = [ Http.header "Accept" "text/html" ]
+        , url = (endpoint ++ "/notifications")
         , body = Http.emptyBody
         , expect = Http.expectString
         , timeout = Nothing
