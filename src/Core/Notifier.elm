@@ -1,11 +1,11 @@
-module Core.Notifier exposing (Msg(NewNotification, DrawerMsg), Model, Flags, subscriptions, view, update, init, drawerState)
+module Core.Notifier exposing (Msg(NewNotification, DrawerMsg), Model, Flags, subscriptions, view, update, init, isDrawerOpen)
 
 {-| Displays latest notifications
 
 
 # Exported
 
-@docs Msg, Model, Flags, subscriptions, view, update, init, drawerState
+@docs Msg, Model, Flags, subscriptions, view, update, init, isDrawerOpen
 
 -}
 
@@ -107,8 +107,8 @@ spinnerView =
 Returns true if the drawer is opened, false if it isn't
 
 -}
-drawerState : Model -> Bool
-drawerState model =
+isDrawerOpen : Model -> Bool
+isDrawerOpen model =
     model.drawer.state == Drawer.Opened
 
 
