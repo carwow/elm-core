@@ -16,14 +16,21 @@ import Http exposing (request)
 import CarwowTheme.Drawer as Drawer exposing (Model, Properties, Msg(Toggle), init, view, Action(Open, Close))
 import RemoteData exposing (RemoteData, WebData, sendRequest, update)
 import Json.Encode as Encode
+import Dict
+
+
+type alias PaginatedResponse =
+    { totalPages : Int
+    , body : String
+    }
 
 
 {-| A representation of the NotificationDrawer
 -}
 type alias Model =
     { flags : Flags
-    , notifications : WebData String
-    , page : Int
+    , notifications : PaginatedResponse
+    , currentPage : Int
     , drawer : Drawer.Model
     , loadMoreDisabled : Bool
     }
@@ -33,15 +40,15 @@ type alias Model =
 
 NewNotification — A new notification has occured
 NotificationsResponse — A response has been received from the external notifications API
-LoadMoreNotifications — The user has requested more notifications
 DrawerMsg — An action has occured on the drawer element
+LoadMoreNotifications — The user has requested more notifications
 
 -}
 type Msg
     = NewNotification String
-    | NotificationsResponse (WebData String)
+    | NotificationsResponse (Result Http.Error PaginatedResponse)
     | DrawerMsg Drawer.Msg
-    | LoadMore
+    | LoadMoreNotifications
 
 
 {-| A flag to represent the API endpoint to retreive notifications
@@ -49,6 +56,13 @@ type Msg
 type alias Flags =
     { notifierApiEndpoint : String
     }
+
+
+{-| A representation of an invalid PaginatedResponse
+-}
+invalidPaginatedResponse : PaginatedResponse
+invalidPaginatedResponse =
+    PaginatedResponse -1 ""
 
 
 {-| Initialise the model
@@ -59,14 +73,8 @@ init flags =
         drawer =
             Drawer.init "notifications-drawer"
 
-        page =
-            1
-
-        loadMoreDisabled =
-            False
-
         model =
-            Model flags RemoteData.NotAsked page drawer loadMoreDisabled
+            Model flags invalidPaginatedResponse 1 drawer False
     in
         ( model, Cmd.none )
 
@@ -80,12 +88,12 @@ view model =
             "Notifications"
 
         body =
-            case model.notifications of
-                RemoteData.Success responseBody ->
-                    notificationsView responseBody
+            case model.notifications.body of
+                "" ->
+                    spinnerView
 
                 _ ->
-                    spinnerView
+                    notificationsView model.notifications.body
 
         drawerProperties =
             Drawer.Properties body title
@@ -99,7 +107,7 @@ view model =
         Drawer.view model.drawer drawerProperties toggleOpenMsg toggleCloseMsg (loadMoreButton model)
 
 
-{-| Load more button view
+{-| Load More button, if there is data to load
 -}
 loadMoreButton : Model -> Html Msg
 loadMoreButton model =
@@ -109,7 +117,14 @@ loadMoreButton model =
         div
             [ class "notification-drawer__load_more"
             ]
-            [ button [ class "btn btn-secondary btn-short", onClick LoadMore ] [ text "Load More" ] ]
+            [ button [ class "btn btn-secondary btn-short", onClick LoadMoreNotifications ] [ text "Load More" ] ]
+
+
+{-| A view representing a spinner, carwow style!
+-}
+spinnerView : Html Msg
+spinnerView =
+    div [ class "carwow-spinner carwow-spinner-centered" ] []
 
 
 {-| Inserts the result of the notification response into the drawer
@@ -117,13 +132,6 @@ loadMoreButton model =
 notificationsView : String -> Html Msg
 notificationsView notifications =
     div [ property "innerHTML" (Encode.string notifications) ] []
-
-
-{-| Render a spinner view
--}
-spinnerView : Html Msg
-spinnerView =
-    div [ class "carwow-spinner carwow-spinner-centered" ] []
 
 
 {-| The current state of the drawer.
@@ -136,39 +144,37 @@ isDrawerOpen model =
     model.drawer.state == Drawer.Opened
 
 
-isResponseEmpty : WebData String -> Bool
-isResponseEmpty webData =
-    (toString webData) == "Success \"\"" || (toString webData) == "Success \"<p class='heading--small-underline heading--small-underline-center'>Nothing new.</p>\\n\""
-
-
 {-| Update the model based on the message received
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
     case action of
-        LoadMore ->
-            ( { model | page = (model.page + 1) }, getNotifications model.flags.notifierApiEndpoint (model.page + 1) )
+        LoadMoreNotifications ->
+            ( { model | currentPage = (model.currentPage + 1) }, fetchResults model.flags.notifierApiEndpoint (model.currentPage + 1) )
 
         NewNotification string ->
-            ( model, (getNotifications model.flags.notifierApiEndpoint model.page) )
+            ( model, (fetchResults model.flags.notifierApiEndpoint model.currentPage) )
 
         NotificationsResponse response ->
             let
-                appendedString =
-                    RemoteData.map2 String.append model.notifications response
+                responseData =
+                    case response of
+                        Ok paginatedResult ->
+                            paginatedResult
 
-                _ =
-                    Debug.log "isResponseEmpty" (toString (isResponseEmpty response))
+                        _ ->
+                            invalidPaginatedResponse
 
-                _ =
-                    Debug.log "response" (toString response)
+                appendedResponse =
+                    if String.isEmpty model.notifications.body then
+                        responseData.body
+                    else
+                        model.notifications.body ++ responseData.body
+
+                loadMoreDisabled =
+                    model.currentPage > responseData.totalPages
             in
-                case model.page of
-                    1 ->
-                        ( { model | notifications = response, loadMoreDisabled = isResponseEmpty response }, Cmd.none )
-
-                    _ ->
-                        ( { model | notifications = RemoteData.map2 String.append model.notifications response, loadMoreDisabled = isResponseEmpty response }, Cmd.none )
+                ( { model | notifications = PaginatedResponse responseData.totalPages appendedResponse, loadMoreDisabled = loadMoreDisabled }, Cmd.none )
 
         DrawerMsg message ->
             let
@@ -181,7 +187,7 @@ update action model =
                 notifierCmd =
                     case message of
                         Drawer.Toggle Drawer.Open ->
-                            getNotifications model.flags.notifierApiEndpoint model.page
+                            fetchResults model.flags.notifierApiEndpoint model.currentPage
 
                         _ ->
                             Cmd.none
@@ -194,24 +200,52 @@ update action model =
                 )
 
 
-{-| Make a request to the endpoint representing the notifications
+{-| An Http.Expect object that is transformed to a PaginatedResponse
+-}
+expectPaginatedResults : Http.Expect PaginatedResponse
+expectPaginatedResults =
+    Http.expectStringResponse
+        (\response ->
+            Ok
+                (PaginatedResponse
+                    (response.headers
+                        |> Dict.toList
+                        |> List.map (Tuple.mapFirst String.toLower)
+                        |> Dict.fromList
+                        |> Dict.get "x-total-pages"
+                        |> Maybe.withDefault "0"
+                        |> String.toInt
+                        |> Result.toMaybe
+                        |> Maybe.withDefault 0
+                    )
+                    response.body
+                )
+        )
+
+
+{-| The representation of the request for Paginated notifications
 
 Note: we request the HTML by default
 
 -}
-getNotifications : String -> Int -> Cmd Msg
+getNotifications : String -> Int -> Http.Request PaginatedResponse
 getNotifications endpoint page =
     Http.request
         { method = "GET"
         , headers = [ Http.header "Accept" "text/html" ]
         , url = (endpoint ++ "/notifications?page=" ++ (toString page))
         , body = Http.emptyBody
-        , expect = Http.expectString
+        , expect = expectPaginatedResults
         , timeout = Nothing
         , withCredentials = True
         }
-        |> RemoteData.sendRequest
-        |> Cmd.map NotificationsResponse
+
+
+{-| Make the HTTP request
+-}
+fetchResults : String -> Int -> Cmd Msg
+fetchResults endpoint page =
+    Http.send NotificationsResponse (getNotifications endpoint page)
 
 
 {-| Placeholder
