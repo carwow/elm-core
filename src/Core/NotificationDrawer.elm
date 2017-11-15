@@ -14,7 +14,6 @@ import Html.Attributes exposing (class, property)
 import Html.Events exposing (onClick)
 import Http exposing (request)
 import CarwowTheme.Drawer as Drawer exposing (Model, Properties, Msg(Toggle), init, view, Action(Open, Close))
-import RemoteData exposing (RemoteData, WebData, sendRequest, update)
 import Json.Encode as Encode
 import Dict
 
@@ -172,7 +171,7 @@ update action model =
                         model.notifications.body ++ responseData.body
 
                 loadMoreDisabled =
-                    model.currentPage > responseData.totalPages
+                    model.currentPage >= responseData.totalPages
             in
                 ( { model | notifications = PaginatedResponse responseData.totalPages appendedResponse, loadMoreDisabled = loadMoreDisabled }, Cmd.none )
 
