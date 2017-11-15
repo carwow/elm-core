@@ -165,7 +165,7 @@ update action model =
                             invalidPaginatedResponse
 
                 appendedResponse =
-                    if model.loadMoreDisabled then
+                    if String.isEmpty model.notifications.body then
                         responseData.body
                     else
                         model.notifications.body ++ responseData.body
@@ -180,30 +180,35 @@ update action model =
                 ( newDrawer, drawerCmd ) =
                     Drawer.update message model.drawer
 
-                drawerOpen =
+                newPage =
                     case message of
                         Drawer.Toggle Drawer.Open ->
-                            True
+                            model.currentPage
 
                         _ ->
-                            False
+                            1
 
-                newPage =
-                    if drawerOpen == True then
-                        model.currentPage
-                    else
-                        1
+                newNotifications =
+                    case message of
+                        Drawer.Toggle Drawer.Close ->
+                            invalidPaginatedResponse
+
+                        _ ->
+                            model.notifications
 
                 notifierCmd =
                     case message of
                         Drawer.Toggle Drawer.Open ->
-                            fetchResults model.flags.notifierApiEndpoint model.currentPage
+                            if String.isEmpty model.notifications.body then
+                                fetchResults model.flags.notifierApiEndpoint newPage
+                            else
+                                Cmd.none
 
                         _ ->
                             Cmd.none
 
                 newModel =
-                    { model | drawer = newDrawer, currentPage = newPage }
+                    { model | drawer = newDrawer, currentPage = newPage, notifications = newNotifications }
             in
                 ( newModel
                 , Cmd.batch
