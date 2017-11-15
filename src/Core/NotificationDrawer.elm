@@ -165,7 +165,7 @@ update action model =
                             invalidPaginatedResponse
 
                 appendedResponse =
-                    if String.isEmpty model.notifications.body then
+                    if model.currentPage == 1 then
                         responseData.body
                     else
                         model.notifications.body ++ responseData.body
@@ -180,16 +180,25 @@ update action model =
                 ( newDrawer, drawerCmd ) =
                     Drawer.update message model.drawer
 
-                newModel =
-                    { model | drawer = newDrawer }
-
-                notifierCmd =
+                drawerOpen =
                     case message of
                         Drawer.Toggle Drawer.Open ->
-                            fetchResults model.flags.notifierApiEndpoint model.currentPage
+                            True
 
                         _ ->
-                            Cmd.none
+                            False
+
+                newPage =
+                    if drawerOpen == True then
+                        model.currentPage
+                    else
+                        1
+
+                notifierCmd =
+                    fetchResults model.flags.notifierApiEndpoint model.currentPage
+
+                newModel =
+                    { model | drawer = newDrawer, currentPage = newPage }
             in
                 ( newModel
                 , Cmd.batch
