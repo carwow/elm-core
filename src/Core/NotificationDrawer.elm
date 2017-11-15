@@ -165,7 +165,7 @@ update action model =
                             invalidPaginatedResponse
 
                 appendedResponse =
-                    if model.currentPage == 1 then
+                    if model.loadMoreDisabled then
                         responseData.body
                     else
                         model.notifications.body ++ responseData.body
