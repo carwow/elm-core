@@ -195,7 +195,12 @@ update action model =
                         1
 
                 notifierCmd =
-                    fetchResults model.flags.notifierApiEndpoint model.currentPage
+                    case message of
+                        Drawer.Toggle Drawer.Open ->
+                            fetchResults model.flags.notifierApiEndpoint model.currentPage
+
+                        _ ->
+                            Cmd.none
 
                 newModel =
                     { model | drawer = newDrawer, currentPage = newPage }
