@@ -10,7 +10,7 @@ module Core.NotificationMenu exposing (Msg(UpdateBadge), init, view, update, Mod
 -}
 
 import Html exposing (text, span, label, i, Html)
-import Html.Attributes exposing (for)
+import Html.Attributes exposing (for, attribute)
 import Html.Events exposing (onClick)
 import Svg exposing (text)
 import Svg.Attributes exposing (class)
@@ -69,14 +69,23 @@ update msg model =
 -}
 view : Model -> Html Msg
 view model =
-    label
-        [ class "main-header-menu-link main-header-menu-link--extra-padded"
-        , for "notifications-drawer-open"
-        , onClick ClearBadge
-        ]
-        [ badgeView model.unseenCount
-        , i [ class "icon" ] [ icon "bell" { size = "small", colour = "white", colouring = "outline" } ]
-        ]
+    let
+        unseenCount =
+            (toString (Maybe.withDefault 0 model.unseenCount))
+    in
+        label
+            [ class "main-header-menu-link main-header-menu-link--extra-padded"
+            , for "notifications-drawer-open"
+            , onClick ClearBadge
+            , attribute "data-interaction-section" "notification menu"
+            , attribute "data-interaction-type" "open modal"
+            , attribute "data-unseen-count" unseenCount
+            ]
+            [ badgeView model.unseenCount
+            , i
+                [ class "icon icon--notification" ]
+                [ icon "bell" { size = "small", colour = "white", colouring = "outline" } ]
+            ]
 
 
 badgeView : Maybe Int -> Html Msg

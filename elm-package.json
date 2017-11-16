@@ -1,5 +1,5 @@
 {
-    "version": "4.0.5",
+    "version": "4.0.6",
     "summary": "Elm components used by carwow",
     "repository": "https://github.com/carwow/elm-core.git",
     "license": "BSD3",
@@ -11,7 +11,7 @@
         "Core.NotificationMenu"
     ],
     "dependencies": {
-        "carwow/elm-theme": "4.0.0 <= v < 5.0.0",
+        "carwow/elm-theme": "4.0.2 <= v < 5.0.0",
         "elm-lang/core": "5.1.1 <= v < 6.0.0",
         "elm-lang/html": "2.0.0 <= v < 3.0.0",
         "elm-lang/http": "1.0.0 <= v < 2.0.0",
