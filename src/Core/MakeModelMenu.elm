@@ -49,6 +49,8 @@ type alias Model =
     , apiEndpointUrl : Erl.Url
     , apiFilterField : String
     , baseLinkUrl : Erl.Url
+    , makeUrl : Erl.Url
+    , modelUrl : Erl.Url
     }
 
 
@@ -69,6 +71,8 @@ type alias Flags =
     , apiEndpointUrl : String
     , apiFilterField : String
     , baseLinkUrl : String
+    , makeUrl: String
+    , modelUrl: String
     }
 
 
@@ -92,11 +96,17 @@ init flags =
         baseLinkUrl =
             Erl.parse flags.baseLinkUrl
 
+        makeUrl =
+            Erl.parse flags.makeUrl
+
+        modelUrl =
+            Erl.parse flags.modelUrl
+
         state =
             MakeSelection RemoteData.Loading
 
         model =
-            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl
+            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl makeUrl modelUrl
     in
         ( model, Cmd.none )
 
@@ -241,7 +251,7 @@ modalMakesView makesRemoteData =
 modalModelsView : Core.Data.Make.Make -> Erl.Url -> WebData (List Core.Data.Model.Model) -> Html Msg
 modalModelsView make baseLinkUrl modelsRemoteData =
     let
-        modelUrl =
+        makeModelUrl =
             (\model ->
                 baseLinkUrl
                     |> Erl.addQuery "make_slug" make.slug
@@ -251,7 +261,7 @@ modalModelsView make baseLinkUrl modelsRemoteData =
 
         modelView =
             (\model ->
-                [ a [ href (modelUrl model), class "makes-models-menu__link makes-models-menu__model" ]
+                [ a [ href (makeModelUrl model), class "makes-models-menu__link makes-models-menu__model" ]
                     [ text model.name ]
                 ]
             )
