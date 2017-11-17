@@ -49,8 +49,7 @@ type alias Model =
     , apiEndpointUrl : Erl.Url
     , apiFilterField : String
     , baseLinkUrl : Erl.Url
-    , makeUrl : Erl.Url
-    , modelUrl : Erl.Url
+    , location: String
     }
 
 
@@ -71,8 +70,7 @@ type alias Flags =
     , apiEndpointUrl : String
     , apiFilterField : String
     , baseLinkUrl : String
-    , makeUrl: String
-    , modelUrl: String
+    , location: String
     }
 
 
@@ -96,17 +94,11 @@ init flags =
         baseLinkUrl =
             Erl.parse flags.baseLinkUrl
 
-        makeUrl =
-            Erl.parse flags.makeUrl
-
-        modelUrl =
-            Erl.parse flags.modelUrl
-
         state =
             MakeSelection RemoteData.Loading
 
         model =
-            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl makeUrl modelUrl
+            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.location
     in
         ( model, Cmd.none )
 
@@ -245,17 +237,28 @@ modalMakesView makesRemoteData =
     in
         listView makeView makesRemoteData
 
+{-| Placeholder
+-}
+replace: String -> String -> String -> String
+replace from to str =
+  String.split from str
+      |> String.join to
 
 {-| Placeholder
 -}
-modalModelsView : Core.Data.Make.Make -> Erl.Url -> WebData (List Core.Data.Model.Model) -> Html Msg
-modalModelsView make baseLinkUrl modelsRemoteData =
+modalModelsView : Core.Data.Make.Make -> String -> Erl.Url -> WebData (List Core.Data.Model.Model) -> Html Msg
+modalModelsView make location baseLinkUrl modelsRemoteData =
     let
+        url =
+          replace "www." "quotes." location
+
         makeModelUrl =
             (\model ->
-                baseLinkUrl
-                    |> Erl.addQuery "make_slug" make.slug
-                    |> Erl.addQuery "model_slug" model.slug
+                url
+                    |> Erl.parse
+                    |> Erl.appendPathSegments ["car_configuration", "choose-derivative"]
+                    |> Erl.addQuery "make" make.slug
+                    |> Erl.addQuery "model" model.slug
                     |> Erl.toString
             )
 
@@ -292,7 +295,7 @@ view model =
                     )
 
                 ModelSelection make availableModels ->
-                    ( modalModelsView make model.baseLinkUrl availableModels
+                    ( modalModelsView make model.location model.baseLinkUrl availableModels
                     , "Choose model"
                     , div
                         [ Html.Attributes.class "modal__header-button"
