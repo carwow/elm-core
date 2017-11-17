@@ -9,8 +9,8 @@ module Core.NotificationMenu exposing (Msg(UpdateBadge), init, view, update, Mod
 
 -}
 
-import Html exposing (text, span, label, i, Html, a)
-import Html.Attributes exposing (for, href, attribute)
+import Html exposing (text, span, label, i, Html)
+import Html.Attributes exposing (for, attribute)
 import Html.Events exposing (onClick)
 import Svg exposing (text)
 import Svg.Attributes exposing (class)
