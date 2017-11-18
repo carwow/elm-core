@@ -20,6 +20,7 @@ import Http exposing (get)
 import Erl exposing (..)
 import Core.Data.Make exposing (..)
 import Core.Data.Model exposing (..)
+import Regex exposing (..)
 
 
 {-| Placeholder
@@ -246,7 +247,8 @@ modalModelsView make location baseLinkUrl modelsRemoteData =
         makeModelUrl =
             (\model ->
                 location
-                    |> (\from to str -> String.split from str |> String.join to) "www." "quotes."
+                    |> Regex.replace All (Regex.regex "www.") (\_ -> "quotes.")
+                    -- |> (\from to str -> String.split from str |> String.join to) "www." "quotes."
                     |> Erl.parse
                     |> Erl.appendPathSegments (Erl.toString(baseLinkUrl) |> String.split "/")
                     |> Erl.addQuery "make" make.slug
