@@ -237,26 +237,18 @@ modalMakesView makesRemoteData =
     in
         listView makeView makesRemoteData
 
-{-| Placeholder
--}
-replace: String -> String -> String -> String
-replace from to str =
-  String.split from str
-      |> String.join to
 
 {-| Placeholder
 -}
 modalModelsView : Core.Data.Make.Make -> String -> Erl.Url -> WebData (List Core.Data.Model.Model) -> Html Msg
 modalModelsView make location baseLinkUrl modelsRemoteData =
     let
-        url =
-          replace "www." "quotes." location
-
         makeModelUrl =
             (\model ->
-                url
+                location
+                    |> (\from to str -> String.split from str |> String.join to) "www." "quotes."
                     |> Erl.parse
-                    |> Erl.appendPathSegments ["car_configuration", "choose-derivative"]
+                    |> Erl.appendPathSegments (Erl.toString(baseLinkUrl) |> String.split "/")
                     |> Erl.addQuery "make" make.slug
                     |> Erl.addQuery "model" model.slug
                     |> Erl.toString
