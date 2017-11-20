@@ -14,14 +14,14 @@ import Html exposing (..)
 import Core.ModalPorts exposing (fixScroll)
 
 
-{-| Placeholder
+{-| A function which initialises the modal
 -}
 init : String -> CarwowTheme.Modal.Model
 init id =
     CarwowTheme.Modal.init id
 
 
-{-| Placeholder
+{-| A function to update the modal according to messages received
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -37,14 +37,14 @@ update msg model =
             CarwowTheme.Modal.update message model
 
 
-{-| Placeholder
+{-| The view for the modal component
 -}
 view : Model -> msg -> msg -> ModalProperties msg -> Html msg
 view model openModalEvent closeModalEvent properties =
     CarwowTheme.Modal.view model openModalEvent closeModalEvent properties
 
 
-{-| Placeholder
+{-| A function to set the subscriptions of the component
 -}
 subscriptions : Model -> Sub Msg
 subscriptions model =

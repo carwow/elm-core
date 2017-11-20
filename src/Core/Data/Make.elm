@@ -13,7 +13,7 @@ import Json.Decode exposing (..)
 import Json.Decode.Pipeline exposing (decode, required, optional)
 
 
-{-| Placeholder
+{-| A representation of the Make
 -}
 type alias Make =
     { name : String
@@ -24,14 +24,14 @@ type alias Make =
     }
 
 
-{-| Placeholder
+{-| Decode the list of Makes
 -}
 listDecoder : Decoder (List Make)
 listDecoder =
     list decoder
 
 
-{-| Placeholder
+{-| Make decoder
 -}
 decoder : Decoder Make
 decoder =

@@ -13,7 +13,7 @@ import Json.Decode exposing (..)
 import Json.Decode.Pipeline exposing (decode, required, optional)
 
 
-{-| Placeholder
+{-| A representation of the Model
 -}
 type alias Model =
     { name : String
@@ -24,14 +24,14 @@ type alias Model =
     }
 
 
-{-| Placeholder
+{-| Decode the list of Models
 -}
 listDecoder : Decoder (List Model)
 listDecoder =
     list decoder
 
 
-{-| Placeholder
+{-| Model decoder
 -}
 decoder : Decoder Model
 decoder =

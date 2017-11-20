@@ -23,7 +23,7 @@ import Core.Data.Model exposing (..)
 import Regex exposing (..)
 
 
-{-| Placeholder
+{-| The program which describes the MakeModelMenu, takes flags
 -}
 main : Program Flags Model Msg
 main =
@@ -35,14 +35,14 @@ main =
         }
 
 
-{-| Placeholder
+{-| The state of the model
 -}
 type State
     = MakeSelection (WebData (List Core.Data.Make.Make))
     | ModelSelection Core.Data.Make.Make (WebData (List Core.Data.Model.Model))
 
 
-{-| Placeholder
+{-| A representation of the MakeModelMenu
 -}
 type alias Model =
     { state : State
@@ -54,7 +54,13 @@ type alias Model =
     }
 
 
-{-| Placeholder
+{-| The different messages the Make Model Menu accepts
+
+ModalBackClicked - The back button is clicked by the user
+MakesResponse - A response is received from the Makes endpoint
+ModelsResponse -A response is received from the Models endpoint
+ModalMsg - A message is received by the underlying Modal component
+
 -}
 type Msg
     = MakeSelected Core.Data.Make.Make
@@ -64,7 +70,7 @@ type Msg
     | ModalMsg CarwowTheme.Modal.Msg
 
 
-{-| Placeholder
+{-| Flags which are used to retrieve and display the Make & Model data
 -}
 type alias Flags =
     { id : String
@@ -75,13 +81,13 @@ type alias Flags =
     }
 
 
-{-| Placeholder
+{-| A representation of a Make or Model in the menu
 -}
 type alias MenuItem a =
     { a | name : String }
 
 
-{-| Placeholder
+{-| Initialise the model
 -}
 init : Flags -> ( Model, Cmd Msg )
 init flags =
@@ -104,7 +110,7 @@ init flags =
         ( model, Cmd.none )
 
 
-{-| Placeholder
+{-| Update the component if a message is received
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -188,7 +194,7 @@ update msg model =
                 ( { model | state = newState }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
 
 
-{-| Placeholder
+{-| Process the Make/Model data retrieved from research site
 -}
 processRemoteData :
     (MenuItem a -> Bool)
@@ -202,7 +208,7 @@ processRemoteData field items =
         ( items |> List.filter field |> List.sortBy sortField, Cmd.none )
 
 
-{-| Placeholder
+{-| A view representing the list of Makes/Models
 -}
 listView : (a -> List (Html msg)) -> WebData (List a) -> Html msg
 listView itemView itemsRemoteData =
@@ -222,7 +228,7 @@ listView itemView itemsRemoteData =
             spinnerView
 
 
-{-| Placeholder
+{-| A view representing a singular Make
 -}
 modalMakesView : WebData (List Make) -> Html Msg
 modalMakesView makesRemoteData =
@@ -239,7 +245,7 @@ modalMakesView makesRemoteData =
         listView makeView makesRemoteData
 
 
-{-| Placeholder
+{-| A view representing a singular Model
 -}
 modalModelsView : Core.Data.Make.Make -> String -> Erl.Url -> WebData (List Core.Data.Model.Model) -> Html Msg
 modalModelsView make location baseLinkUrl modelsRemoteData =
@@ -265,7 +271,7 @@ modalModelsView make location baseLinkUrl modelsRemoteData =
         listView modelView modelsRemoteData
 
 
-{-| Placeholder
+{-| A view representing a spinner
 -}
 spinnerView : Html msg
 spinnerView =
@@ -274,7 +280,7 @@ spinnerView =
         [ div [ class "carwow-spinner carwow-spinner-centered" ] [] ]
 
 
-{-| Placeholder
+{-| A view representing the whole model
 -}
 view : Model -> Html Msg
 view model =
@@ -309,14 +315,14 @@ view model =
         Core.Modal.view model.modal openModalMsg closeModalMsg modalProperties
 
 
-{-| Placeholder
+{-| The subscriptions of this model
 -}
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.map ModalMsg <| Core.Modal.subscriptions model.modal
 
 
-{-| Placeholder
+{-| A function which returns the path to the Makes endpoint
 -}
 makesApiUrl : Url -> Url
 makesApiUrl apiEndpointUrl =
@@ -324,7 +330,7 @@ makesApiUrl apiEndpointUrl =
         |> Erl.appendPathSegments [ "api", "v2", "makes" ]
 
 
-{-| Placeholder
+{-| A function which returns the path to the Models endpoint
 -}
 modelsApiUrl : Url -> String -> Url
 modelsApiUrl apiEndpointUrl makeSlug =
@@ -332,7 +338,7 @@ modelsApiUrl apiEndpointUrl makeSlug =
         |> Erl.appendPathSegments [ makeSlug, "models" ]
 
 
-{-| Placeholder
+{-| A function which returns the list of available Makes from the API
 -}
 getAvailableMakes : Erl.Url -> Cmd Msg
 getAvailableMakes availableMakesUrl =
@@ -341,7 +347,7 @@ getAvailableMakes availableMakesUrl =
         |> Cmd.map MakesResponse
 
 
-{-| Placeholder
+{-| A function which returns the list of available Models from the API
 -}
 getAvailableModels : Erl.Url -> Cmd Msg
 getAvailableModels availableModelsUrl =
