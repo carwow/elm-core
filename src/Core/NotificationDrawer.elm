@@ -66,11 +66,11 @@ invalidPaginatedResponse =
 
 {-| Initialise the model
 -}
-init : Flags -> ( Model, Cmd Msg )
-init flags =
+init : String -> Flags -> ( Model, Cmd Msg )
+init id flags =
     let
         drawer =
-            Drawer.init "notifications-drawer"
+            Drawer.init id
 
         model =
             Model flags invalidPaginatedResponse 1 drawer False
