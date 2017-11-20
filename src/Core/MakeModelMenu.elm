@@ -253,7 +253,6 @@ modalModelsView make location baseLinkUrl modelsRemoteData =
         makeModelUrl =
             (\model ->
                 location
-                    |> Regex.replace All (Regex.regex "www.") (\_ -> "quotes.")
                     |> Erl.parse
                     |> Erl.appendPathSegments (Erl.toString(baseLinkUrl) |> String.split "/")
                     |> Erl.addQuery "make" make.slug
