@@ -11,7 +11,6 @@ module Core.Modal exposing (init, update, view, subscriptions)
 
 import CarwowTheme.Modal exposing (..)
 import Html exposing (..)
-import Core.ModalPorts exposing (fixScroll)
 
 
 {-| A function which initialises the modal
@@ -25,16 +24,7 @@ init id =
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        SwitchModal isOpen ->
-            let
-                ( newModel, cmd ) =
-                    CarwowTheme.Modal.update (SwitchModal isOpen) model
-            in
-                ( newModel, fixScroll isOpen )
-
-        message ->
-            CarwowTheme.Modal.update message model
+    CarwowTheme.Modal.update msg model
 
 
 {-| The view for the modal component

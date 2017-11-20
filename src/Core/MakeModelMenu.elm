@@ -1,11 +1,11 @@
-module Core.MakeModelMenu exposing (processRemoteData, getAvailableMakes, getAvailableModels, modelsApiUrl, makesApiUrl, main, init, update, subscriptions, view, Flags, Model, Msg)
+module Core.MakeModelMenu exposing (init, update, subscriptions, view, Flags, Model, Msg)
 
 {-| Make/Model menu component
 
 
 # Exported
 
-@docs processRemoteData, getAvailableMakes, getAvailableModels, modelsApiUrl, makesApiUrl, main, init, update, subscriptions, view, Flags, Model, Msg
+@docs init, update, subscriptions, view, Flags, Model, Msg
 
 -}
 
