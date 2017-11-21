@@ -20,7 +20,6 @@ import Http exposing (get)
 import Erl exposing (..)
 import Core.Data.Make exposing (..)
 import Core.Data.Model exposing (..)
-import Regex exposing (..)
 
 
 {-| The program which describes the MakeModelMenu, takes flags
