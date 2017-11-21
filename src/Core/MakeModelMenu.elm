@@ -43,6 +43,12 @@ type State
 
 
 {-| A representation of the MakeModelMenu
+
+modal - The modal component that the MakeModelMenu will use
+apiEndpointUrl - The url of the API endpoint to retrieve the Make/Model data from
+apiFilterField - The filter field used in the API request
+baseLinkUrl - The path to re-direct to once the Make Model has been selected
+redirectLocation - The location that the Menu should re-direct to once the Make & Model has been selected, e.g https://quotes.carwow.co.uk/
 -}
 type alias Model =
     { state : State
@@ -50,7 +56,7 @@ type alias Model =
     , apiEndpointUrl : Erl.Url
     , apiFilterField : String
     , baseLinkUrl : Erl.Url
-    , location: String
+    , redirectLocation: String
     }
 
 
@@ -77,7 +83,7 @@ type alias Flags =
     , apiEndpointUrl : String
     , apiFilterField : String
     , baseLinkUrl : String
-    , location: String
+    , redirectLocation: String
     }
 
 
@@ -105,7 +111,7 @@ init flags =
             MakeSelection RemoteData.Loading
 
         model =
-            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.location
+            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectLocation
     in
         ( model, Cmd.none )
 
@@ -248,11 +254,11 @@ modalMakesView makesRemoteData =
 {-| A view representing a singular Model
 -}
 modalModelsView : Core.Data.Make.Make -> String -> Erl.Url -> WebData (List Core.Data.Model.Model) -> Html Msg
-modalModelsView make location baseLinkUrl modelsRemoteData =
+modalModelsView make redirectLocation baseLinkUrl modelsRemoteData =
     let
         makeModelUrl =
             (\model ->
-                location
+                redirectLocation
                     |> Erl.parse
                     |> Erl.appendPathSegments (Erl.toString(baseLinkUrl) |> String.split "/")
                     |> Erl.addQuery "make" make.slug
@@ -293,7 +299,7 @@ view model =
                     )
 
                 ModelSelection make availableModels ->
-                    ( modalModelsView make model.location model.baseLinkUrl availableModels
+                    ( modalModelsView make model.redirectLocation model.baseLinkUrl availableModels
                     , "Choose model"
                     , div
                         [ Html.Attributes.class "modal__header-button"
