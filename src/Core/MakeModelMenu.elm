@@ -9,7 +9,7 @@ module Core.MakeModelMenu exposing (init, update, subscriptions, view, Flags, Mo
 
 -}
 
-import CarwowTheme.Icons exposing (icon)
+import CarwowTheme.Icons exposing (icon, makeIcon)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
@@ -229,9 +229,7 @@ modalMakesView makesRemoteData =
         makeView =
             (\make ->
                 [ span [ class "makes-models-menu__link makes-models-menu__make", Html.Events.onClick (MakeSelected make) ]
-                    [ icon ("makes/" ++ String.join "_" (String.split "-" (String.toLower make.slug))) { size = "large", colour = "grey", colouring = "filled" }
-                    , div [ class "makes-models-menu__make" ] [ text make.name ]
-                    ]
+                    [ makeIcon (String.toLower make.slug) Nothing, div [ class "makes-models-menu__make" ] [ text make.name ] ]
                 ]
             )
     in
