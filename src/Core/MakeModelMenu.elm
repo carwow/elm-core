@@ -22,18 +22,6 @@ import Core.Data.Make exposing (..)
 import Core.Data.Model exposing (..)
 
 
-{-| The program which describes the MakeModelMenu, takes flags
--}
-main : Program Flags Model Msg
-main =
-    Html.programWithFlags
-        { init = init
-        , update = update
-        , subscriptions = subscriptions
-        , view = view
-        }
-
-
 {-| The state of the model
 -}
 type State
