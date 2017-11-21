@@ -11,8 +11,7 @@
         "Core.NotificationMenu",
         "Core.Data.Make",
         "Core.Data.Model",
-        "Core.MakeModelMenu",
-        "Core.Modal"
+        "Core.MakeModelMenu"
     ],
     "dependencies": {
         "carwow/elm-theme": "4.0.2 <= v < 5.0.0",

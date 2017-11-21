@@ -13,8 +13,7 @@ import CarwowTheme.Icons exposing (icon, makeIcon)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
-import Core.Modal exposing (..)
-import CarwowTheme.Modal exposing (ModalProperties, PaddingStyle)
+import CarwowTheme.Modal exposing (..)
 import RemoteData exposing (RemoteData, WebData, sendRequest, update)
 import Http exposing (get)
 import Erl exposing (..)
@@ -86,7 +85,7 @@ init : Flags -> ( Model, Cmd Msg )
 init flags =
     let
         modal =
-            Core.Modal.init flags.id
+            CarwowTheme.Modal.init flags.id
 
         apiEndpointUrl =
             Erl.parse flags.apiEndpointUrl
@@ -111,7 +110,7 @@ update msg model =
         ModalMsg inner ->
             let
                 ( newModal, modalUpdateCmd ) =
-                    Core.Modal.update inner model.modal
+                    CarwowTheme.Modal.update inner model.modal
 
                 ( newModel, makeModelMenuCmd ) =
                     case inner of
@@ -302,14 +301,14 @@ view model =
         closeModalMsg =
             ModalMsg (CarwowTheme.Modal.SwitchModal False)
     in
-        Core.Modal.view model.modal openModalMsg closeModalMsg modalProperties
+        CarwowTheme.Modal.view model.modal openModalMsg closeModalMsg modalProperties
 
 
 {-| The subscriptions of this model
 -}
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.map ModalMsg <| Core.Modal.subscriptions model.modal
+    Sub.map ModalMsg <| CarwowTheme.Modal.subscriptions model.modal
 
 
 {-| A function which returns the path to the Makes endpoint
