@@ -227,8 +227,12 @@ modalMakesView makesRemoteData =
     let
         makeView =
             (\make ->
-                [ span [ class "makes-models-menu__link makes-models-menu__make", Html.Events.onClick (MakeSelected make) ]
-                    [ makeIcon (String.toLower make.slug) Nothing, div [ class "makes-models-menu__make" ] [ text make.name ] ]
+                [ span [ class "makes-models-menu__link makes-models-menu__make"
+                , attribute "data-interaction-element" "Choose make"
+                , attribute "data-interaction-section" "make-models modal"
+                , attribute "data-interaction-type" "select make"
+                , Html.Events.onClick (MakeSelected make) ]
+                [ makeIcon (String.toLower make.slug) Nothing, div [ class "makes-models-menu__make" ] [ text make.name ] ]
                 ]
             )
     in
@@ -252,8 +256,12 @@ modalModelsView make redirectUrl baseLinkUrl modelsRemoteData =
 
         modelView =
             (\model ->
-                [ a [ href (makeModelUrl model), class "makes-models-menu__link makes-models-menu__model" ]
-                    [ text model.name ]
+                [ a [ href (makeModelUrl model)
+                , class "makes-models-menu__link makes-models-menu__model"
+                , attribute "data-interaction-element" "Choose model"
+                , attribute "data-interaction-section" "make-models modal"
+                , attribute "data-interaction-type" "select model" ]
+                [ text model.name ]
                 ]
             )
     in
