@@ -227,7 +227,8 @@ modalMakesView makesRemoteData =
     let
         makeView =
             (\make ->
-                [ a [ class "makes-models-menu__link makes-models-menu__make"
+                [ a [ href "javascript:void(0)" 
+                , class "makes-models-menu__link makes-models-menu__make"
                 , attribute "data-interaction-element" "Choose make"
                 , attribute "data-interaction-section" "make-models modal"
                 , attribute "data-interaction-type" "select make"
