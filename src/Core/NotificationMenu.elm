@@ -93,7 +93,7 @@ badgeView unseenCount =
     case unseenCount of
         Just count ->
             span
-                [ class "badge badge--regular badge-notification badge--small main-header-menu__badge" ]
+                [ class "badge badge-notification badge--small main-header-menu__badge" ]
                 [ Svg.text (toString count) ]
 
         Nothing ->
