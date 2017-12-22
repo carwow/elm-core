@@ -250,8 +250,8 @@ modalModelsView make redirectUrl baseLinkUrl modelsRemoteData =
                 redirectUrl
                     |> Erl.parse
                     |> Erl.appendPathSegments (Erl.toString(baseLinkUrl) |> String.split "/")
-                    |> Erl.addQuery "make" make.slug
-                    |> Erl.addQuery "model" model.slug
+                    |> Erl.addQuery "make_slug" make.slug
+                    |> Erl.addQuery "model_slug" model.slug
                     |> Erl.toString
             )
 
