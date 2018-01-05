@@ -35,6 +35,11 @@ type alias Model =
     }
 
 
+type ResponseType
+    = LoadMore
+    | Refresh
+
+
 {-| The different messages the Notification Drawer accepts
 
 NewNotification — A new notification has occured
@@ -44,8 +49,8 @@ LoadMoreNotifications — The user has requested more notifications
 
 -}
 type Msg
-    = NewNotification String
-    | NotificationsResponse (Result Http.Error PaginatedResponse)
+    = NewNotification
+    | NotificationsResponse ResponseType (Result Http.Error PaginatedResponse)
     | DrawerMsg Drawer.Msg
     | LoadMoreNotifications
 
@@ -149,12 +154,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update action model =
     case action of
         LoadMoreNotifications ->
-            ( { model | currentPage = (model.currentPage + 1) }, fetchResults model.flags.notifierApiEndpoint (model.currentPage + 1) )
+            ( { model | currentPage = (model.currentPage + 1) }, fetchResults model.flags.notifierApiEndpoint (model.currentPage + 1) LoadMore )
 
-        NewNotification string ->
-            ( model, (fetchResults model.flags.notifierApiEndpoint model.currentPage) )
+        NewNotification ->
+            ( model, (fetchResults model.flags.notifierApiEndpoint model.currentPage Refresh) )
 
-        NotificationsResponse response ->
+        NotificationsResponse responseType response ->
             let
                 responseData =
                     case response of
@@ -165,7 +170,7 @@ update action model =
                             invalidPaginatedResponse
 
                 appendedResponse =
-                    if String.isEmpty model.notifications.body then
+                    if String.isEmpty model.notifications.body || responseType == Refresh then
                         responseData.body
                     else
                         model.notifications.body ++ responseData.body
@@ -200,7 +205,7 @@ update action model =
                     case message of
                         Drawer.Toggle Drawer.Open ->
                             if String.isEmpty model.notifications.body then
-                                fetchResults model.flags.notifierApiEndpoint newPage
+                                fetchResults model.flags.notifierApiEndpoint newPage Refresh
                             else
                                 Cmd.none
 
@@ -261,9 +266,9 @@ getNotifications endpoint page =
 
 {-| Make the HTTP request
 -}
-fetchResults : String -> Int -> Cmd Msg
-fetchResults endpoint page =
-    Http.send NotificationsResponse (getNotifications endpoint page)
+fetchResults : String -> Int -> ResponseType -> Cmd Msg
+fetchResults endpoint page responseType =
+    Http.send (NotificationsResponse responseType) (getNotifications endpoint page)
 
 
 {-| Placeholder
