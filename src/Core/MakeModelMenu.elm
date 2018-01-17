@@ -1,4 +1,4 @@
-module Core.MakeModelMenu exposing (init, update, subscriptions, view, Flags, Model, Msg)
+module Core.MakeModelMenu exposing (init, update, subscriptions, view, Flags, Model, Msg(UrlChange))
 
 {-| Make/Model menu component
 
@@ -19,6 +19,7 @@ import Http exposing (get)
 import Erl exposing (..)
 import Core.Data.Make exposing (..)
 import Core.Data.Model exposing (..)
+import Navigation
 
 
 {-| The state of the model
@@ -52,7 +53,7 @@ ModalBackClicked - The back button is clicked by the user
 MakesResponse - A response is received from the Makes endpoint
 ModelsResponse -A response is received from the Models endpoint
 ModalMsg - A message is received by the underlying Modal component
-
+UrlChange - A message is received when the address bar changes
 -}
 type Msg
     = MakeSelected Core.Data.Make.Make
@@ -60,6 +61,7 @@ type Msg
     | MakesResponse (WebData (List Core.Data.Make.Make))
     | ModelsResponse (WebData (List Core.Data.Model.Model))
     | ModalMsg CarwowTheme.Modal.Msg
+    | UrlChange Navigation.Location
 
 
 {-| Flags which are used to retrieve and display the Make & Model data
@@ -79,13 +81,25 @@ type alias MenuItem a =
     { a | name : String }
 
 
+mapUrlToModalOpen : Erl.Url -> Bool
+mapUrlToModalOpen url =
+    case url.hash of
+        "make-model-menu" ->
+            True
+        _ ->
+            False
+
+
 {-| Initialise the model
 -}
-init : Flags -> ( Model, Cmd Msg )
-init flags =
+init : Flags -> Navigation.Location -> ( Model, Cmd Msg )
+init flags location =
     let
+        url =
+            Erl.parse location.href
+
         modal =
-            CarwowTheme.Modal.init flags.id
+            CarwowTheme.Modal.init flags.id (mapUrlToModalOpen url)
 
         apiEndpointUrl =
             Erl.parse flags.apiEndpointUrl
@@ -98,8 +112,18 @@ init flags =
 
         model =
             Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl
+
+        getMakesCmd =
+            case mapUrlToModalOpen url of
+                True ->
+                    getAvailableMakes (makesApiUrl model.apiEndpointUrl)
+                False ->
+                    Cmd.none
+
+        commands =
+            Cmd.batch [ getMakesCmd ]
     in
-        ( model, Cmd.none )
+        ( model, commands )
 
 
 {-| Update the component if a message is received
@@ -185,6 +209,24 @@ update msg model =
             in
                 ( { model | state = newState }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
 
+        UrlChange location ->
+            let
+                ( newModal, modalUpdateCmd ) =
+                    case mapUrlToModalOpen (Erl.parse location.href) of
+                        True ->
+                            CarwowTheme.Modal.update (CarwowTheme.Modal.SwitchModal True) model.modal
+                        _ ->
+                            (model.modal, Cmd.none)
+
+                ( newModel, makeModelMenuCmd ) =
+                    case mapUrlToModalOpen (Erl.parse location.href) of
+                        True ->
+                            ( { model | state = (MakeSelection RemoteData.Loading) }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
+                        _ ->
+                            ( model, Cmd.none )
+            in
+                ( { newModel | modal = newModal }, Cmd.batch [ Cmd.map ModalMsg modalUpdateCmd, makeModelMenuCmd ] )
+
 
 {-| Process the Make/Model data retrieved from research site
 -}
@@ -227,7 +269,7 @@ modalMakesView makesRemoteData =
     let
         makeView =
             (\make ->
-                [ a [ href "javascript:void(0)" 
+                [ a [ href "javascript:void(0)"
                 , class "makes-models-menu__link makes-models-menu__make"
                 , attribute "data-interaction-element" "Choose make"
                 , attribute "data-interaction-section" "make-models modal"
