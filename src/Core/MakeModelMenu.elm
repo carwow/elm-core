@@ -81,13 +81,11 @@ type alias MenuItem a =
     { a | name : String }
 
 
+{-| A function which maps the address bar hash link to the modal open state
+-}
 mapUrlToModalOpen : Erl.Url -> Bool
 mapUrlToModalOpen url =
-    case url.hash of
-        "make-model-menu" ->
-            True
-        _ ->
-            False
+    url.hash == "make-model-menu"
 
 
 {-| Initialise the model
