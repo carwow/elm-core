@@ -21,7 +21,6 @@ import Core.Data.Make exposing (..)
 import Core.Data.Model exposing (..)
 import Navigation
 
-
 {-| The state of the model
 -}
 type State
@@ -44,6 +43,7 @@ type alias Model =
     , apiFilterField : String
     , baseLinkUrl : Erl.Url
     , redirectUrl: String
+    , preselectedMakeSlug : Maybe String
     }
 
 
@@ -108,20 +108,33 @@ init flags location =
         state =
             MakeSelection RemoteData.Loading
 
+        preselectedMakeSlug =
+            Just "Ford"
+
         model =
-            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl
+            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl preselectedMakeSlug
 
         getMakesCmd =
-            case mapUrlToModalOpen url of
-                True ->
-                    getAvailableMakes (makesApiUrl model.apiEndpointUrl)
-                False ->
-                    Cmd.none
+            getAvailableMakes (makesApiUrl model.apiEndpointUrl)
+--            case mapUrlToModalOpen url of
+--                True ->
+--                    getAvailableMakes (makesApiUrl model.apiEndpointUrl)
+--                False ->
+--                    Cmd.none
 
         commands =
             Cmd.batch [ getMakesCmd ]
     in
         ( model, commands )
+
+
+makeFromMakes : WebData (List Make) -> Maybe String -> Maybe Make
+makeFromMakes makes slug =
+    case slug of
+        Nothing -> Nothing
+        Just slug ->
+           makes |> RemoteData.toMaybe
+                 |> Maybe.andThen (List.filter (\x -> x.slug == slug) >> List.head)
 
 
 {-| Update the component if a message is received
@@ -171,8 +184,18 @@ update msg model =
 
                         _ ->
                             ( RemoteData.Loading, Cmd.none )
+
+                make = makeFromMakes sortedFilteredResponse model.preselectedMakeSlug
             in
-                ( { model | state = MakeSelection sortedFilteredResponse }, Cmd.none )
+                case model.preselectedMakeSlug of
+                    Nothing ->
+                        ( { model | state = MakeSelection sortedFilteredResponse }, Cmd.none )
+                    Just preselected ->
+                        case make of
+                            Nothing ->
+                                ( { model | state = MakeSelection sortedFilteredResponse }, Cmd.none )
+                            Just make ->
+                                { model | state = MakeSelection sortedFilteredResponse } |> update (MakeSelected make)
 
         ModelsResponse response ->
             let
