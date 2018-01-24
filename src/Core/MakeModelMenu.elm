@@ -116,12 +116,11 @@ init flags location =
             Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl preselectedMakeSlug
 
         getMakesCmd =
-            getAvailableMakes (makesApiUrl model.apiEndpointUrl)
---            case mapUrlToModalOpen url of
---                True ->
---                    getAvailableMakes (makesApiUrl model.apiEndpointUrl)
---                False ->
---                    Cmd.none
+            case mapUrlToModalOpen url of
+                True ->
+                    getAvailableMakes (makesApiUrl model.apiEndpointUrl)
+                False ->
+                    Cmd.none
 
         commands =
             Cmd.batch [ getMakesCmd ]
