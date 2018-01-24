@@ -109,7 +109,8 @@ init flags location =
             MakeSelection RemoteData.Loading
 
         preselectedMakeSlug =
-            Just "Ford"
+            Erl.getQueryValuesForKey "make" url
+                |> List.head
 
         model =
             Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl preselectedMakeSlug
