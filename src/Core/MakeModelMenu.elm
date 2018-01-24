@@ -228,7 +228,7 @@ update msg model =
                 newState =
                     MakeSelection RemoteData.Loading
             in
-                ( { model | state = newState }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
+                ( { model | state = newState, preselectedMakeSlug = Nothing }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
 
         UrlChange location ->
             let
