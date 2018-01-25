@@ -139,8 +139,8 @@ update msg model =
                     CarwowTheme.Modal.update inner model.modal
 
                 navigationCmd = if newModal.isOpen == False then
-                        currentUrlWithoutHash(model.location)
-                            |> currentUrlWithoutMake
+                        locationWithoutHash(model.location)
+                            |> locationWithoutMake
                             |> Erl.toString
                             |> Navigation.modifyUrl
                     else
@@ -230,7 +230,7 @@ update msg model =
 
                 commands = Cmd.batch[
                     getAvailableMakes (makesApiUrl model.apiEndpointUrl)
-                    , currentUrlWithoutMake(model.location) |> Erl.toString |> Navigation.modifyUrl
+                    , locationWithoutMake(model.location) |> Erl.toString |> Navigation.modifyUrl
                     ]
             in
                 ( { model | state = newState, preselectedMakeSlug = Nothing }, commands )
@@ -279,12 +279,12 @@ findPreselectedMake slug makes =
                  |> Maybe.andThen (List.filter (\x -> x.slug == slug) >> List.head)
 
 
-currentUrlWithoutMake : Url -> Url
-currentUrlWithoutMake url =
+locationWithoutMake : Url -> Url
+locationWithoutMake url =
     Erl.removeQuery "make" url
 
-currentUrlWithoutHash : Url -> Url
-currentUrlWithoutHash url =
+locationWithoutHash : Url -> Url
+locationWithoutHash url =
     { url | hash = "" }
 
 {-| A view representing the list of Makes/Models
