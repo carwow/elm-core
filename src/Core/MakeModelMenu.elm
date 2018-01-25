@@ -35,7 +35,8 @@ modal - The modal component that the MakeModelMenu will use
 apiEndpointUrl - The url of the API endpoint to retrieve the Make/Model data from
 apiFilterField - The filter field used in the API request
 baseLinkUrl - The path to re-direct to once the Make Model has been selected
-redirectUrl - The url that the Menu should re-direct to once the Make & Model has been selected, e.g https://quotes.carwow.co.uk/
+redirectUrl - The url that the Menu should re-direct to once the Make & Model has been selected, e.g <https://quotes.carwow.co.uk/>
+
 -}
 type alias Model =
     { state : State
@@ -43,7 +44,9 @@ type alias Model =
     , apiEndpointUrl : Erl.Url
     , apiFilterField : String
     , baseLinkUrl : Erl.Url
-    , redirectUrl: String
+    , redirectUrl : String
+    , preselectedMakeSlug : Maybe String
+    , location : Url
     }
 
 
@@ -54,6 +57,7 @@ MakesResponse - A response is received from the Makes endpoint
 ModelsResponse -A response is received from the Models endpoint
 ModalMsg - A message is received by the underlying Modal component
 UrlChange - A message is received when the address bar changes
+
 -}
 type Msg
     = MakeSelected Core.Data.Make.Make
@@ -71,7 +75,7 @@ type alias Flags =
     , apiEndpointUrl : String
     , apiFilterField : String
     , baseLinkUrl : String
-    , redirectUrl: String
+    , redirectUrl : String
     }
 
 
@@ -108,13 +112,17 @@ init flags location =
         state =
             MakeSelection RemoteData.Loading
 
+        preselectedMakeSlug =
+            Erl.getQueryValuesForKey "make" url |> List.head
+
         model =
-            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl
+            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl preselectedMakeSlug url
 
         getMakesCmd =
             case mapUrlToModalOpen url of
                 True ->
                     getAvailableMakes (makesApiUrl model.apiEndpointUrl)
+
                 False ->
                     Cmd.none
 
@@ -134,6 +142,15 @@ update msg model =
                 ( newModal, modalUpdateCmd ) =
                     CarwowTheme.Modal.update inner model.modal
 
+                navigationCmd =
+                    if newModal.isOpen == False then
+                        locationWithoutHash (model.location)
+                            |> locationWithoutMake
+                            |> Erl.toString
+                            |> Navigation.newUrl
+                    else
+                        Cmd.none
+
                 ( newModel, makeModelMenuCmd ) =
                     case inner of
                         CarwowTheme.Modal.SwitchModal True ->
@@ -142,7 +159,7 @@ update msg model =
                         _ ->
                             ( model, Cmd.none )
             in
-                ( { newModel | modal = newModal }, Cmd.batch [ Cmd.map ModalMsg modalUpdateCmd, makeModelMenuCmd ] )
+                ( { newModel | modal = newModal }, Cmd.batch [ Cmd.map ModalMsg modalUpdateCmd, makeModelMenuCmd, navigationCmd ] )
 
         MakeSelected make ->
             let
@@ -171,8 +188,15 @@ update msg model =
 
                         _ ->
                             ( RemoteData.Loading, Cmd.none )
+
+                make =
+                    findPreselectedMake model.preselectedMakeSlug sortedFilteredResponse
+
+                newModel =
+                    { model | state = MakeSelection sortedFilteredResponse }
             in
-                ( { model | state = MakeSelection sortedFilteredResponse }, Cmd.none )
+                Maybe.map2 (\preselected make -> (update (MakeSelected make) newModel)) model.preselectedMakeSlug make
+                    |> Maybe.withDefault ( newModel, Cmd.none )
 
         ModelsResponse response ->
             let
@@ -204,8 +228,14 @@ update msg model =
             let
                 newState =
                     MakeSelection RemoteData.Loading
+
+                commands =
+                    Cmd.batch
+                        [ getAvailableMakes (makesApiUrl model.apiEndpointUrl)
+                        , locationWithoutMake (model.location) |> Erl.toString |> Navigation.newUrl
+                        ]
             in
-                ( { model | state = newState }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
+                ( { model | state = newState, preselectedMakeSlug = Nothing }, commands )
 
         UrlChange location ->
             let
@@ -213,17 +243,22 @@ update msg model =
                     case mapUrlToModalOpen (Erl.parse location.href) of
                         True ->
                             CarwowTheme.Modal.update (CarwowTheme.Modal.SwitchModal True) model.modal
+
                         _ ->
-                            (model.modal, Cmd.none)
+                            ( model.modal, Cmd.none )
 
                 ( newModel, makeModelMenuCmd ) =
                     case mapUrlToModalOpen (Erl.parse location.href) of
                         True ->
                             ( { model | state = (MakeSelection RemoteData.Loading) }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
+
                         _ ->
                             ( model, Cmd.none )
+
+                preselectedMakeSlug =
+                    Erl.parse location.href |> Erl.getQueryValuesForKey "make" |> List.head
             in
-                ( { newModel | modal = newModal }, Cmd.batch [ Cmd.map ModalMsg modalUpdateCmd, makeModelMenuCmd ] )
+                ( { newModel | modal = newModal, location = (Erl.parse location.href), preselectedMakeSlug = preselectedMakeSlug }, Cmd.batch [ Cmd.map ModalMsg modalUpdateCmd, makeModelMenuCmd ] )
 
 
 {-| Process the Make/Model data retrieved from research site
@@ -238,6 +273,30 @@ processRemoteData field items =
             item.name |> String.toUpper
     in
         ( items |> List.filter field |> List.sortBy sortField, Cmd.none )
+
+
+{-| Find the preselected make based on matching slug against make.slug
+-}
+findPreselectedMake : Maybe String -> WebData (List Make) -> Maybe Make
+findPreselectedMake slug makes =
+    case slug of
+        Nothing ->
+            Nothing
+
+        Just slug ->
+            makes
+                |> RemoteData.toMaybe
+                |> Maybe.andThen (List.filter (\x -> x.slug == slug) >> List.head)
+
+
+locationWithoutMake : Url -> Url
+locationWithoutMake url =
+    Erl.removeQuery "make" url
+
+
+locationWithoutHash : Url -> Url
+locationWithoutHash url =
+    { url | hash = "" }
 
 
 {-| A view representing the list of Makes/Models
@@ -267,13 +326,15 @@ modalMakesView makesRemoteData =
     let
         makeView =
             (\make ->
-                [ a [ href "javascript:void(0)"
-                , class "makes-models-menu__link makes-models-menu__make"
-                , attribute "data-interaction-element" "Choose make"
-                , attribute "data-interaction-section" "make-models modal"
-                , attribute "data-interaction-type" "select make"
-                , Html.Events.onClick (MakeSelected make) ]
-                [ makeIcon (String.toLower make.slug) Nothing, div [ class "makes-models-menu__make" ] [ text make.name ] ]
+                [ a
+                    [ href "javascript:void(0)"
+                    , class "makes-models-menu__link makes-models-menu__make"
+                    , attribute "data-interaction-element" "Choose make"
+                    , attribute "data-interaction-section" "make-models modal"
+                    , attribute "data-interaction-type" "select make"
+                    , Html.Events.onClick (MakeSelected make)
+                    ]
+                    [ makeIcon (String.toLower make.slug) Nothing, div [ class "makes-models-menu__make" ] [ text make.name ] ]
                 ]
             )
     in
@@ -289,7 +350,7 @@ modalModelsView make redirectUrl baseLinkUrl modelsRemoteData =
             (\model ->
                 redirectUrl
                     |> Erl.parse
-                    |> Erl.appendPathSegments (Erl.toString(baseLinkUrl) |> String.split "/")
+                    |> Erl.appendPathSegments (Erl.toString (baseLinkUrl) |> String.split "/")
                     |> Erl.addQuery "make" make.slug
                     |> Erl.addQuery "model" model.slug
                     |> Erl.toString
@@ -297,12 +358,14 @@ modalModelsView make redirectUrl baseLinkUrl modelsRemoteData =
 
         modelView =
             (\model ->
-                [ a [ href (makeModelUrl model)
-                , class "makes-models-menu__link makes-models-menu__model"
-                , attribute "data-interaction-element" "Choose model"
-                , attribute "data-interaction-section" "make-models modal"
-                , attribute "data-interaction-type" "select model" ]
-                [ text model.name ]
+                [ a
+                    [ href (makeModelUrl model)
+                    , class "makes-models-menu__link makes-models-menu__model"
+                    , attribute "data-interaction-element" "Choose model"
+                    , attribute "data-interaction-section" "make-models modal"
+                    , attribute "data-interaction-type" "select model"
+                    ]
+                    [ text model.name ]
                 ]
             )
     in
