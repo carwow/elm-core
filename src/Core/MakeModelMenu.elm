@@ -44,6 +44,7 @@ type alias Model =
     , baseLinkUrl : Erl.Url
     , redirectUrl: String
     , preselectedMakeSlug : Maybe String
+    , location : Url
     }
 
 
@@ -112,7 +113,7 @@ init flags location =
             Erl.getQueryValuesForKey "make" url |> List.head
 
         model =
-            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl preselectedMakeSlug
+            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl preselectedMakeSlug url
 
         getMakesCmd =
             case mapUrlToModalOpen url of
@@ -137,6 +138,14 @@ update msg model =
                 ( newModal, modalUpdateCmd ) =
                     CarwowTheme.Modal.update inner model.modal
 
+                navigationCmd = if newModal.isOpen == False then
+                        currentUrlWithoutHash(model.location)
+                            |> currentUrlWithoutMake
+                            |> Erl.toString
+                            |> Navigation.modifyUrl
+                    else
+                        Cmd.none
+
                 ( newModel, makeModelMenuCmd ) =
                     case inner of
                         CarwowTheme.Modal.SwitchModal True ->
@@ -145,7 +154,7 @@ update msg model =
                         _ ->
                             ( model, Cmd.none )
             in
-                ( { newModel | modal = newModal }, Cmd.batch [ Cmd.map ModalMsg modalUpdateCmd, makeModelMenuCmd ] )
+                ( { newModel | modal = newModal }, Cmd.batch [ Cmd.map ModalMsg modalUpdateCmd, makeModelMenuCmd, navigationCmd ] )
 
         MakeSelected make ->
             let
@@ -218,8 +227,13 @@ update msg model =
             let
                 newState =
                     MakeSelection RemoteData.Loading
+
+                commands = Cmd.batch[
+                    getAvailableMakes (makesApiUrl model.apiEndpointUrl)
+                    , currentUrlWithoutMake(model.location) |> Erl.toString |> Navigation.modifyUrl
+                    ]
             in
-                ( { model | state = newState, preselectedMakeSlug = Nothing }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
+                ( { model | state = newState, preselectedMakeSlug = Nothing }, commands )
 
         UrlChange location ->
             let
@@ -237,7 +251,7 @@ update msg model =
                         _ ->
                             ( model, Cmd.none )
             in
-                ( { newModel | modal = newModal }, Cmd.batch [ Cmd.map ModalMsg modalUpdateCmd, makeModelMenuCmd ] )
+                ( { newModel | modal = newModal, location = (Erl.parse location.href) }, Cmd.batch [ Cmd.map ModalMsg modalUpdateCmd, makeModelMenuCmd ] )
 
 
 {-| Process the Make/Model data retrieved from research site
@@ -264,6 +278,14 @@ findPreselectedMake slug makes =
            makes |> RemoteData.toMaybe
                  |> Maybe.andThen (List.filter (\x -> x.slug == slug) >> List.head)
 
+
+currentUrlWithoutMake : Url -> Url
+currentUrlWithoutMake url =
+    Erl.removeQuery "make" url
+
+currentUrlWithoutHash : Url -> Url
+currentUrlWithoutHash url =
+    { url | hash = "" }
 
 {-| A view representing the list of Makes/Models
 -}
