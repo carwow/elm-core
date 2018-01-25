@@ -142,7 +142,7 @@ update msg model =
                         locationWithoutHash(model.location)
                             |> locationWithoutMake
                             |> Erl.toString
-                            |> Navigation.modifyUrl
+                            |> Navigation.newUrl
                     else
                         Cmd.none
 
@@ -230,7 +230,7 @@ update msg model =
 
                 commands = Cmd.batch[
                     getAvailableMakes (makesApiUrl model.apiEndpointUrl)
-                    , locationWithoutMake(model.location) |> Erl.toString |> Navigation.modifyUrl
+                    , locationWithoutMake(model.location) |> Erl.toString |> Navigation.newUrl
                     ]
             in
                 ( { model | state = newState, preselectedMakeSlug = Nothing }, commands )
@@ -250,8 +250,11 @@ update msg model =
                             ( { model | state = (MakeSelection RemoteData.Loading) }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
                         _ ->
                             ( model, Cmd.none )
+
+                preselectedMakeSlug =
+                    Erl.parse location.href |> Erl.getQueryValuesForKey "make" |> List.head
             in
-                ( { newModel | modal = newModal, location = (Erl.parse location.href) }, Cmd.batch [ Cmd.map ModalMsg modalUpdateCmd, makeModelMenuCmd ] )
+                ( { newModel | modal = newModal, location = (Erl.parse location.href), preselectedMakeSlug = preselectedMakeSlug }, Cmd.batch [ Cmd.map ModalMsg modalUpdateCmd, makeModelMenuCmd ] )
 
 
 {-| Process the Make/Model data retrieved from research site
