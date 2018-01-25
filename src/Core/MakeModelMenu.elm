@@ -128,15 +128,6 @@ init flags location =
         ( model, commands )
 
 
-makeFromMakes : WebData (List Make) -> Maybe String -> Maybe Make
-makeFromMakes makes slug =
-    case slug of
-        Nothing -> Nothing
-        Just slug ->
-           makes |> RemoteData.toMaybe
-                 |> Maybe.andThen (List.filter (\x -> x.slug == slug) >> List.head)
-
-
 {-| Update the component if a message is received
 -}
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -185,17 +176,15 @@ update msg model =
                         _ ->
                             ( RemoteData.Loading, Cmd.none )
 
-                make = makeFromMakes sortedFilteredResponse model.preselectedMakeSlug
+                make = findPreselectedMake model.preselectedMakeSlug sortedFilteredResponse
+                newModel = { model | state = MakeSelection sortedFilteredResponse }
             in
                 case model.preselectedMakeSlug of
-                    Nothing ->
-                        ( { model | state = MakeSelection sortedFilteredResponse }, Cmd.none )
+                    Nothing -> ( newModel, Cmd.none )
                     Just preselected ->
                         case make of
-                            Nothing ->
-                                ( { model | state = MakeSelection sortedFilteredResponse }, Cmd.none )
-                            Just make ->
-                                { model | state = MakeSelection sortedFilteredResponse } |> update (MakeSelected make)
+                            Nothing -> ( newModel, Cmd.none )
+                            Just make -> update (MakeSelected make) newModel
 
         ModelsResponse response ->
             let
@@ -261,6 +250,17 @@ processRemoteData field items =
             item.name |> String.toUpper
     in
         ( items |> List.filter field |> List.sortBy sortField, Cmd.none )
+
+
+{-| Find the preselected make based on matching slug against make.slug
+-}
+findPreselectedMake : Maybe String -> WebData (List Make) -> Maybe Make
+findPreselectedMake slug makes =
+    case slug of
+        Nothing -> Nothing
+        Just slug ->
+           makes |> RemoteData.toMaybe
+                 |> Maybe.andThen (List.filter (\x -> x.slug == slug) >> List.head)
 
 
 {-| A view representing the list of Makes/Models
