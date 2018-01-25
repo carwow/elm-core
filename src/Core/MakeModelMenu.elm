@@ -180,11 +180,14 @@ update msg model =
                 newModel = { model | state = MakeSelection sortedFilteredResponse }
             in
                 case model.preselectedMakeSlug of
-                    Nothing -> ( newModel, Cmd.none )
+                    Nothing ->
+                        ( newModel, Cmd.none )
                     Just preselected ->
                         case make of
-                            Nothing -> ( newModel, Cmd.none )
-                            Just make -> update (MakeSelected make) newModel
+                            Nothing ->
+                                ( newModel, Cmd.none )
+                            Just make ->
+                                update (MakeSelected make) newModel
 
         ModelsResponse response ->
             let
