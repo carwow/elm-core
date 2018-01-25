@@ -195,17 +195,8 @@ update msg model =
                 newModel =
                     { model | state = MakeSelection sortedFilteredResponse }
             in
-                case model.preselectedMakeSlug of
-                    Nothing ->
-                        ( newModel, Cmd.none )
-
-                    Just preselected ->
-                        case make of
-                            Nothing ->
-                                ( newModel, Cmd.none )
-
-                            Just make ->
-                                update (MakeSelected make) newModel
+                Maybe.map2 (\preselected make -> (update (MakeSelected make) newModel)) model.preselectedMakeSlug make
+                    |> Maybe.withDefault ( newModel, Cmd.none )
 
         ModelsResponse response ->
             let
