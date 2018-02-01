@@ -1,4 +1,4 @@
-module Core.Data.Make exposing ( Make , listDecoder , decoder )
+module Core.Data.Make exposing (Make, listDecoder, decoder)
 
 {-| Make menu component
 

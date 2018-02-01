@@ -390,13 +390,13 @@ view model =
             case model.state of
                 MakeSelection availableMakes ->
                     ( modalMakesView availableMakes
-                    , "Choose make"
+                    , div [] [ text "Choose make" ]
                     , div [] []
                     )
 
                 ModelSelection make availableModels ->
                     ( modalModelsView make model.redirectUrl model.baseLinkUrl availableModels
-                    , "Choose model"
+                    , div [] [ text "Choose model" ]
                     , div
                         [ Html.Attributes.class "modal__header-button"
                         , Html.Events.onClick ModalBackClicked
@@ -405,7 +405,7 @@ view model =
                     )
 
         modalProperties =
-            ModalProperties body title CarwowTheme.Modal.NoPadding Nothing (Just backButton)
+            ModalProperties body (Just title) CarwowTheme.Modal.NoPadding Nothing (Just backButton)
 
         openModalMsg =
             ModalMsg (CarwowTheme.Modal.SwitchModal True)
