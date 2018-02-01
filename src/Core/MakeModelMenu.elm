@@ -390,13 +390,13 @@ view model =
             case model.state of
                 MakeSelection availableMakes ->
                     ( modalMakesView availableMakes
-                    , div[] [ text "Choose make" ]
+                    , div [] [ text "Choose make" ]
                     , div [] []
                     )
 
                 ModelSelection make availableModels ->
                     ( modalModelsView make model.redirectUrl model.baseLinkUrl availableModels
-                    , div[] [ text "Choose model" ]
+                    , div [] [ text "Choose model" ]
                     , div
                         [ Html.Attributes.class "modal__header-button"
                         , Html.Events.onClick ModalBackClicked

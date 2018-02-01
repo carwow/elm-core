@@ -1,4 +1,4 @@
-module Core.Data.Model exposing ( Model , listDecoder , decoder )
+module Core.Data.Model exposing (Model, listDecoder, decoder)
 
 {-| Model menu component
 
