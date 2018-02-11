@@ -118,53 +118,60 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    fieldset []
-        [ div []
-            [ label []
-                [ text "Car Price"
-                , input [ type_ "text", name "car-price", placeholder ("i.e. £20,000"), onInput CarPriceChanged ] []
+    div [ class "pcp-calculator" ]
+        [ div [ class "pcp-calculator-form__input" ]
+            [ div [ class "pcp-calculator-form-row" ]
+                [ label [ class "form-input-label" ]
+                    [ text "Car Price"
+                    , input [ type_ "text", name "car-price", placeholder ("i.e. £20,000"), onInput CarPriceChanged ] []
+                    ]
+                ]
+            , div [ class "pcp-calculator-form-row" ]
+                [ label [ class "form-input-label" ]
+                    [ text "Your Deposit"
+                    , input [ type_ "text", name "your-deposit", placeholder ("i.e. £2,500"), onInput DepositChanged ] []
+                    ]
+                ]
+            , div [ class "pcp-calculator-form-row" ]
+                [ label [ class "form-input-label" ]
+                    [ text "Dealer Contribution"
+                    , input [ type_ "text", name "dealer-contribution", placeholder ("i.e. £1,000"), onInput DealerContributionChanged ] []
+                    ]
+                ]
+            , div [ class "pcp-calculator-form-row" ]
+                [ label [ class "form-input-label" ]
+                    [ text "Final Payment"
+                    , input [ type_ "text", name "final-payment", placeholder ("i.e. £1,000"), onInput FinalPaymentChanged ] []
+                    ]
                 ]
             ]
-        , div []
-            [ label []
-                [ text "Your Deposit"
-                , input [ type_ "text", name "your-deposit", placeholder ("i.e. £2,500"), onInput DepositChanged ] []
+        , div [ class "pcp-calculator-form__ranges" ]
+            [ div [ class "pcp-calculator-form-row" ]
+                [ label [ class "pcp-calculator__range-label" ]
+                    [ text "Length of finance"
+                    , input [ type_ "range", name "length-of-finance", H.min "12", H.max "48", H.step "6", value <| toString model.financeLength, onInput FinanceLengthChanged ] []
+                    ]
+                , text <| toString model.financeLength
+                ]
+            , div [ class "pcp-calculator-form-row" ]
+                [ label [ class "pcp-calculator__range-label" ]
+                    [ text "Mileage agreement"
+                    , input [ type_ "range", name "mileage-agreement", H.min "5000", H.max "30000", H.step "5000", value <| toString model.mileageAgreement, onInput MileageAgreementChanged ] []
+                    ]
+                , text <| toString model.mileageAgreement
+                ]
+            , div [ class "pcp-calculator-form-row" ]
+                [ label [ class "pcp-calculator__range-label" ]
+                    [ text "APR %"
+                    , input [ type_ "range", name "apr", H.min "0.01", H.max "20.00", H.step "0.01", value <| toString model.apr, onInput AprChanged ] []
+                    ]
+                , text <| toString model.apr
                 ]
             ]
-        , div []
-            [ label []
-                [ text "Dealer Contribution"
-                , input [ type_ "text", name "dealer-contribution", placeholder ("i.e. £1,000"), onInput DealerContributionChanged ] []
-                ]
+        , div [ class "pcp-calculator-form__estimated-monthly-payment" ]
+            [ div [ class "pcp-calculator__payment-label" ] [ text "Estimated monthly payment" ]
+            , div [ class "pcp-calculator__payment-amount" ] [ text (formatPaymentCurrency (monthlyPayment model)) ]
             ]
-        , div []
-            [ label []
-                [ text "Final Payment"
-                , input [ type_ "text", name "final-payment", placeholder ("i.e. £1,000"), onInput FinalPaymentChanged ] []
-                ]
-            ]
-        , div []
-            [ label []
-                [ text "Length of finance"
-                , input [ type_ "range", name "length-of-finance", H.min "12", H.max "48", H.step "6", value <| toString model.financeLength, onInput FinanceLengthChanged ] []
-                ]
-            , text <| toString model.financeLength
-            ]
-        , div []
-            [ label []
-                [ text "Mileage agreement"
-                , input [ type_ "range", name "mileage-agreement", H.min "5000", H.max "30000", H.step "5000", value <| toString model.mileageAgreement, onInput MileageAgreementChanged ] []
-                ]
-            , text <| toString model.mileageAgreement
-            ]
-        , div []
-            [ label []
-                [ text "APR %"
-                , input [ type_ "range", name "apr", H.min "0.01", H.max "20.00", H.step "0.01", value <| toString model.apr, onInput AprChanged ] []
-                ]
-            , text <| toString model.apr
-            ]
-        , div [] [ text (formatPaymentCurrency (monthlyPayment model)) ]
         ]
 
 
