@@ -1,35 +1,11 @@
-module PcpCalculator exposing (main)
+module PcpCalculator exposing (..)
 
-import Html exposing (Html, Attribute, div, input, text, fieldset, label)
+import Html exposing (Html, Attribute, div, input, text, fieldset, label, program)
 import Html.Attributes as H exposing (..)
 import Html.Events exposing (onInput)
 import FormatNumber exposing (format)
 import FormatNumber.Locales exposing (Locale, usLocale)
 import String
-
-
--- Helpers
-
-
-integerUsLocale : Locale
-integerUsLocale =
-    { usLocale
-        | decimals = 0
-    }
-
-
-formatPaymentCurrency : Float -> String
-formatPaymentCurrency number =
-    "£" ++ format integerUsLocale number
-
-
-
--- Main
-
-
-main =
-    Html.beginnerProgram { model = model, view = view, update = update }
-
 
 
 -- Model
@@ -46,16 +22,18 @@ type alias Model =
     }
 
 
-model : Model
-model =
-    { carPrice = 0
-    , deposit = 0
-    , dealerContribution = 0
-    , finalPayment = 0
-    , financeLength = 36
-    , mileageAgreement = 10000
-    , apr = 7.0
-    }
+init : ( Model, Cmd Msg )
+init =
+    ( { carPrice = 0
+      , deposit = 0
+      , dealerContribution = 0
+      , finalPayment = 0
+      , financeLength = 36
+      , mileageAgreement = 10000
+      , apr = 7.0
+      }
+    , Cmd.none
+    )
 
 
 
@@ -72,29 +50,66 @@ type Msg
     | AprChanged String
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CarPriceChanged amount ->
-            { model | carPrice = (Result.withDefault 0 (String.toInt (amount))) }
+            let
+                newModel =
+                    { model | carPrice = (Result.withDefault 0 (String.toInt (amount))) }
+            in
+                ( newModel, Cmd.none )
 
         DepositChanged amount ->
-            { model | deposit = (Result.withDefault 0 (String.toInt (amount))) }
+            let
+                newModel =
+                    { model | deposit = (Result.withDefault 0 (String.toInt (amount))) }
+            in
+                ( newModel, Cmd.none )
 
         DealerContributionChanged amount ->
-            { model | dealerContribution = (Result.withDefault 0 (String.toInt (amount))) }
+            let
+                newModel =
+                    { model | dealerContribution = (Result.withDefault 0 (String.toInt (amount))) }
+            in
+                ( newModel, Cmd.none )
 
         FinalPaymentChanged amount ->
-            { model | finalPayment = (Result.withDefault 0 (String.toInt (amount))) }
+            let
+                newModel =
+                    { model | finalPayment = (Result.withDefault 0 (String.toInt (amount))) }
+            in
+                ( newModel, Cmd.none )
 
         FinanceLengthChanged amount ->
-            { model | financeLength = (Result.withDefault 0 (String.toInt (amount))) }
+            let
+                newModel =
+                    { model | financeLength = (Result.withDefault 0 (String.toInt (amount))) }
+            in
+                ( newModel, Cmd.none )
 
         MileageAgreementChanged amount ->
-            { model | mileageAgreement = (Result.withDefault 0 (String.toInt (amount))) }
+            let
+                newModel =
+                    { model | mileageAgreement = (Result.withDefault 0 (String.toInt (amount))) }
+            in
+                ( newModel, Cmd.none )
 
         AprChanged amount ->
-            { model | apr = (Result.withDefault 0.0 (String.toFloat (amount))) }
+            let
+                newModel =
+                    { model | apr = (Result.withDefault 0.0 (String.toFloat (amount))) }
+            in
+                ( newModel, Cmd.none )
+
+
+
+-- Subscriptions
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
 
 
 
@@ -179,3 +194,28 @@ monthlyPayment inputs =
         (financeAmount * (monthlyAprRate))
             / (1 - ((1 + monthlyAprRate) ^ toFloat (-inputs.financeLength)))
             + (toFloat (inputs.finalPayment) * (monthlyAprRate))
+
+
+
+-- Helpers
+
+
+integerUsLocale : Locale
+integerUsLocale =
+    { usLocale
+        | decimals = 0
+    }
+
+
+formatPaymentCurrency : Float -> String
+formatPaymentCurrency number =
+    "£" ++ format integerUsLocale number
+
+
+
+-- Main
+
+
+main : Program Never Model Msg
+main =
+    Html.program { init = init, view = view, update = update, subscriptions = subscriptions }
