@@ -145,6 +145,10 @@ view model =
                     ]
                 ]
             ]
+        , div [ class "pcp-calculator-form__amount-financed" ]
+            [ div [ class "pcp-finance-amount-financed__label" ] [ text "Amount to be financed" ]
+            , div [ class "pcp-finance-amount-financed__amount" ] [ text (formatPaymentCurrency (netLoan model)) ]
+            ]
         , div [ class "pcp-calculator-form__ranges" ]
             [ div [ class "pcp-calculator-form-row" ]
                 [ label [ class "pcp-calculator__range-label" ]
@@ -179,9 +183,9 @@ view model =
 -- Functions
 
 
-netLoan : Model -> Int
+netLoan : Model -> Float
 netLoan inputs =
-    inputs.carPrice - inputs.deposit - inputs.dealerContribution - inputs.finalPayment
+    toFloat (inputs.carPrice - inputs.deposit - inputs.dealerContribution - inputs.finalPayment)
 
 
 monthlyRate : Model -> Float
@@ -196,7 +200,7 @@ monthlyPayment inputs =
             monthlyRate inputs
 
         financeAmount =
-            toFloat (netLoan inputs)
+            netLoan inputs
     in
         (financeAmount * (monthlyAprRate))
             / (1 - ((1 + monthlyAprRate) ^ toFloat (-inputs.financeLength)))
