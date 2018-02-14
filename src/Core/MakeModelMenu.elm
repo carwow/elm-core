@@ -47,6 +47,7 @@ type alias Model =
     , redirectUrl : String
     , preselectedMakeSlug : Maybe String
     , location : Url
+    , onlyStockOnSale : Maybe String
     }
 
 
@@ -76,6 +77,7 @@ type alias Flags =
     , apiFilterField : String
     , baseLinkUrl : String
     , redirectUrl : String
+    , onlyStockOnSale : Bool
     }
 
 
@@ -115,13 +117,21 @@ init flags location =
         preselectedMakeSlug =
             Erl.getQueryValuesForKey "make" url |> List.head
 
+        onlyStockOnSale =
+            case flags.onlyStockOnSale of
+                True ->
+                    Just "true"
+
+                False ->
+                    Nothing
+
         model =
-            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl preselectedMakeSlug url
+            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl preselectedMakeSlug url onlyStockOnSale
 
         getMakesCmd =
             case mapUrlToModalOpen url of
                 True ->
-                    getAvailableMakes (makesApiUrl model.apiEndpointUrl)
+                    getAvailableMakes (makesApiUrl model.apiEndpointUrl model.onlyStockOnSale)
 
                 False ->
                     Cmd.none
@@ -154,7 +164,7 @@ update msg model =
                 ( newModel, makeModelMenuCmd ) =
                     case inner of
                         CarwowTheme.Modal.SwitchModal True ->
-                            ( { model | state = (MakeSelection RemoteData.Loading) }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
+                            ( { model | state = (MakeSelection RemoteData.Loading) }, getAvailableMakes (makesApiUrl model.apiEndpointUrl model.onlyStockOnSale) )
 
                         _ ->
                             ( model, Cmd.none )
@@ -166,8 +176,11 @@ update msg model =
                 newState =
                     ModelSelection make RemoteData.Loading
 
+                makesUrl =
+                    makesApiUrl model.apiEndpointUrl model.onlyStockOnSale
+
                 newCmd =
-                    getAvailableModels (modelsApiUrl model.apiEndpointUrl make.slug)
+                    getAvailableModels (modelsApiUrl makesUrl make.slug)
             in
                 ( { model | state = newState }
                 , newCmd
@@ -231,7 +244,7 @@ update msg model =
 
                 commands =
                     Cmd.batch
-                        [ getAvailableMakes (makesApiUrl model.apiEndpointUrl)
+                        [ getAvailableMakes (makesApiUrl model.apiEndpointUrl model.onlyStockOnSale)
                         , locationWithoutMake (model.location) |> Erl.toString |> Navigation.newUrl
                         ]
             in
@@ -250,7 +263,7 @@ update msg model =
                 ( newModel, makeModelMenuCmd ) =
                     case mapUrlToModalOpen (Erl.parse location.href) of
                         True ->
-                            ( { model | state = (MakeSelection RemoteData.Loading) }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
+                            ( { model | state = (MakeSelection RemoteData.Loading) }, getAvailableMakes (makesApiUrl model.apiEndpointUrl model.onlyStockOnSale) )
 
                         _ ->
                             ( model, Cmd.none )
@@ -351,8 +364,8 @@ modalModelsView make redirectUrl baseLinkUrl modelsRemoteData =
                 redirectUrl
                     |> Erl.parse
                     |> Erl.appendPathSegments (Erl.toString (baseLinkUrl) |> String.split "/")
-                    |> Erl.addQuery "make" make.slug
-                    |> Erl.addQuery "model" model.slug
+                    |> Erl.addQuery "make_slug" make.slug
+                    |> Erl.addQuery "model_slug" model.slug
                     |> Erl.toString
             )
 
@@ -425,17 +438,18 @@ subscriptions model =
 
 {-| A function which returns the path to the Makes endpoint
 -}
-makesApiUrl : Url -> Url
-makesApiUrl apiEndpointUrl =
+makesApiUrl : Url -> Maybe String -> Url
+makesApiUrl apiEndpointUrl onlyStockOnSale =
     apiEndpointUrl
         |> Erl.appendPathSegments [ "api", "v2", "makes" ]
+        |> addQueryMaybe "only_stock_on_sale" onlyStockOnSale
 
 
 {-| A function which returns the path to the Models endpoint
 -}
 modelsApiUrl : Url -> String -> Url
-modelsApiUrl apiEndpointUrl makeSlug =
-    makesApiUrl apiEndpointUrl
+modelsApiUrl makesApiUrl makeSlug =
+    makesApiUrl
         |> Erl.appendPathSegments [ makeSlug, "models" ]
 
 
@@ -455,3 +469,13 @@ getAvailableModels availableModelsUrl =
     Http.get (Erl.toString availableModelsUrl) Core.Data.Model.listDecoder
         |> RemoteData.sendRequest
         |> Cmd.map ModelsResponse
+
+
+addQueryMaybe : String -> Maybe String -> Erl.Url -> Erl.Url
+addQueryMaybe name maybeVal url =
+    case maybeVal of
+        Nothing ->
+            url
+
+        Just val ->
+            addQuery name val url
