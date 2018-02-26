@@ -47,7 +47,6 @@ type alias Model =
     , redirectUrl : String
     , preselectedMakeSlug : Maybe String
     , location : Url
-    , onlyStockOnSale : Maybe String
     }
 
 
@@ -77,7 +76,6 @@ type alias Flags =
     , apiFilterField : String
     , baseLinkUrl : String
     , redirectUrl : String
-    , onlyStockOnSale : Bool
     }
 
 
@@ -117,21 +115,13 @@ init flags location =
         preselectedMakeSlug =
             Erl.getQueryValuesForKey "make" url |> List.head
 
-        onlyStockOnSale =
-            case flags.onlyStockOnSale of
-                True ->
-                    Just "true"
-
-                False ->
-                    Nothing
-
         model =
-            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl preselectedMakeSlug url onlyStockOnSale
+            Model state modal apiEndpointUrl flags.apiFilterField baseLinkUrl flags.redirectUrl preselectedMakeSlug url
 
         getMakesCmd =
             case mapUrlToModalOpen url of
                 True ->
-                    getAvailableMakes (makesApiUrl model.apiEndpointUrl model.onlyStockOnSale)
+                    getAvailableMakes (makesApiUrl model.apiEndpointUrl)
 
                 False ->
                     Cmd.none
@@ -164,7 +154,7 @@ update msg model =
                 ( newModel, makeModelMenuCmd ) =
                     case inner of
                         CarwowTheme.Modal.SwitchModal True ->
-                            ( { model | state = (MakeSelection RemoteData.Loading) }, getAvailableMakes (makesApiUrl model.apiEndpointUrl model.onlyStockOnSale) )
+                            ( { model | state = (MakeSelection RemoteData.Loading) }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
 
                         _ ->
                             ( model, Cmd.none )
@@ -177,7 +167,7 @@ update msg model =
                     ModelSelection make RemoteData.Loading
 
                 makesUrl =
-                    makesApiUrl model.apiEndpointUrl model.onlyStockOnSale
+                    makesApiUrl model.apiEndpointUrl
 
                 newCmd =
                     getAvailableModels (modelsApiUrl makesUrl make.slug)
@@ -244,7 +234,7 @@ update msg model =
 
                 commands =
                     Cmd.batch
-                        [ getAvailableMakes (makesApiUrl model.apiEndpointUrl model.onlyStockOnSale)
+                        [ getAvailableMakes (makesApiUrl model.apiEndpointUrl)
                         , locationWithoutMake (model.location) |> Erl.toString |> Navigation.newUrl
                         ]
             in
@@ -263,7 +253,7 @@ update msg model =
                 ( newModel, makeModelMenuCmd ) =
                     case mapUrlToModalOpen (Erl.parse location.href) of
                         True ->
-                            ( { model | state = (MakeSelection RemoteData.Loading) }, getAvailableMakes (makesApiUrl model.apiEndpointUrl model.onlyStockOnSale) )
+                            ( { model | state = (MakeSelection RemoteData.Loading) }, getAvailableMakes (makesApiUrl model.apiEndpointUrl) )
 
                         _ ->
                             ( model, Cmd.none )
@@ -438,11 +428,10 @@ subscriptions model =
 
 {-| A function which returns the path to the Makes endpoint
 -}
-makesApiUrl : Url -> Maybe String -> Url
-makesApiUrl apiEndpointUrl onlyStockOnSale =
+makesApiUrl : Url -> Url
+makesApiUrl apiEndpointUrl =
     apiEndpointUrl
         |> Erl.appendPathSegments [ "api", "v2", "makes" ]
-        |> addQueryMaybe "only_stock_on_sale" onlyStockOnSale
 
 
 {-| A function which returns the path to the Models endpoint
@@ -469,13 +458,3 @@ getAvailableModels availableModelsUrl =
     Http.get (Erl.toString availableModelsUrl) Core.Data.Model.listDecoder
         |> RemoteData.sendRequest
         |> Cmd.map ModelsResponse
-
-
-addQueryMaybe : String -> Maybe String -> Erl.Url -> Erl.Url
-addQueryMaybe name maybeVal url =
-    case maybeVal of
-        Nothing ->
-            url
-
-        Just val ->
-            addQuery name val url
