@@ -1,16 +1,29 @@
-module PcpCalculator exposing (..)
+module Core.PcpCalculator exposing (init, update, subscriptions, view, Model, Msg)
 
-import Html exposing (Html, Attribute, div, input, text, fieldset, label, program)
-import Html.Attributes as H exposing (..)
+{-| PcpCalculator Component
+
+
+# Exported
+
+@docs init, update, subscriptions, view, Model, Msg
+
+-}
+
+import Html exposing (Html, Attribute, div, input, text, label, span, program)
+import CarwowTheme.Icons exposing (icon)
+import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
 import FormatNumber exposing (format)
 import FormatNumber.Locales exposing (Locale, usLocale)
 import String
+import SingleSlider as SingleSlider exposing (..)
 
 
 -- Model
 
 
+{-| The state of the model
+-}
 type alias Model =
     { carPrice : Int
     , deposit : Int
@@ -19,9 +32,14 @@ type alias Model =
     , financeLength : Int
     , mileageAgreement : Int
     , apr : Float
+    , financeLengthSlider : SingleSlider.Model
+    , mileageAgreementSlider : SingleSlider.Model
+    , aprSlider : SingleSlider.Model
     }
 
 
+{-| Init the model with default values
+-}
 init : ( Model, Cmd Msg )
 init =
     ( { carPrice = 0
@@ -31,25 +49,62 @@ init =
       , financeLength = 36
       , mileageAgreement = 10000
       , apr = 7.0
+      , financeLengthSlider = defaultFinanceLengthSlider
+      , mileageAgreementSlider = defaultMileageAgreementSlider
+      , aprSlider = defaultAprSlider
       }
     , Cmd.none
     )
+
+
+defaultFinanceLengthSlider : SingleSlider.Model
+defaultFinanceLengthSlider =
+    SingleSlider.init
+        { min = 12
+        , max = 48
+        , step = 6
+        , value = 36
+        }
+
+
+defaultMileageAgreementSlider : SingleSlider.Model
+defaultMileageAgreementSlider =
+    SingleSlider.init
+        { min = 5000
+        , max = 30000
+        , step = 5000
+        , value = 10000
+        }
+
+
+defaultAprSlider : SingleSlider.Model
+defaultAprSlider =
+    SingleSlider.init
+        { min = 100
+        , max = 700
+        , step = 10
+        , value = 100
+        }
 
 
 
 -- Update
 
 
+{-| Define the messages that the update function can receive
+-}
 type Msg
     = CarPriceChanged String
     | DepositChanged String
     | DealerContributionChanged String
     | FinalPaymentChanged String
-    | FinanceLengthChanged String
-    | MileageAgreementChanged String
-    | AprChanged String
+    | FinanceLengthEvent SingleSlider.Msg
+    | MileageAgreementEvent SingleSlider.Msg
+    | AprEvent SingleSlider.Msg
 
 
+{-| Update the model based on the message received
+-}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -81,24 +136,39 @@ update msg model =
             in
                 ( newModel, Cmd.none )
 
-        FinanceLengthChanged amount ->
+        FinanceLengthEvent inner ->
             let
+                ( newFinanceLengthSlider, cmd, userInputStopped ) =
+                    SingleSlider.update inner model.financeLengthSlider
+
                 newModel =
-                    { model | financeLength = (Result.withDefault 0 (String.toInt (amount))) }
+                    { model
+                        | financeLengthSlider = newFinanceLengthSlider
+                    }
             in
                 ( newModel, Cmd.none )
 
-        MileageAgreementChanged amount ->
+        MileageAgreementEvent inner ->
             let
+                ( newMileageAgreementSlider, cmd, userInputStopped ) =
+                    SingleSlider.update inner model.mileageAgreementSlider
+
                 newModel =
-                    { model | mileageAgreement = (Result.withDefault 0 (String.toInt (amount))) }
+                    { model
+                        | mileageAgreementSlider = newMileageAgreementSlider
+                    }
             in
                 ( newModel, Cmd.none )
 
-        AprChanged amount ->
+        AprEvent inner ->
             let
+                ( newAprSlider, cmd, userInputStopped ) =
+                    SingleSlider.update inner model.aprSlider
+
                 newModel =
-                    { model | apr = (Result.withDefault 0.0 (String.toFloat (amount))) }
+                    { model
+                        | aprSlider = newAprSlider
+                    }
             in
                 ( newModel, Cmd.none )
 
@@ -107,70 +177,69 @@ update msg model =
 -- Subscriptions
 
 
+{-| There are no subscriptions but we need to define the function
+-}
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Sub.batch
+        [ Sub.map FinanceLengthEvent <|
+            SingleSlider.subscriptions model.financeLengthSlider
+        , Sub.map MileageAgreementEvent <|
+            SingleSlider.subscriptions model.mileageAgreementSlider
+        , Sub.map AprEvent <|
+            SingleSlider.subscriptions model.aprSlider
+        ]
 
 
 
 -- View
 
 
+{-| A view represneting a slider component
+-}
+viewSlider : Model -> SingleSlider.Model -> String -> (SingleSlider.Msg -> Msg) -> Html Msg
+viewSlider model slider labelText sliderMsg =
+    div [ class "view-budget-inputs" ]
+        [ label [ class "form-input-label", for "input" ]
+            [ text labelText ]
+        , div [ class "form-input" ]
+            [ div [ class "budget-slider-desktop" ]
+                [ SingleSlider.view slider |> Html.map sliderMsg ]
+            , div [ class "budget-slider-mobile" ]
+                [ SingleSlider.view slider |> Html.map sliderMsg ]
+            , div [ class "input-range-label input-range-label--current-value" ]
+                [ text (toString slider.value) ]
+            ]
+        ]
+
+
+inputHtml : (String -> Msg) -> String -> String -> String -> Html Msg
+inputHtml updateMsg labelText placeholderText idText =
+    div [ class "pcp-calculator-form-row" ]
+        [ label [ class "form-input-label" ] [ text labelText ]
+        , div [ class "input-infield-container" ] [ input [ type_ "tel", class "input-with-icon", id ("input-infield-icon-" ++ idText), placeholder placeholderText, onInput updateMsg ] [], label [ class "input__infield-icon input--number", for ("input-infield-icon-" ++ idText) ] [ icon "currency_gbp" { size = "small", colour = "dark-grey", colouring = "outline" } ] ]
+        ]
+
+
+{-| A view represneting the model
+-}
 view : Model -> Html Msg
 view model =
     div [ class "pcp-calculator" ]
         [ div [ class "pcp-calculator-form__input" ]
-            [ div [ class "pcp-calculator-form-row" ]
-                [ label [ class "form-input-label" ]
-                    [ text "Car Price"
-                    , input [ type_ "text", name "car-price", placeholder ("i.e. £20,000"), onInput CarPriceChanged ] []
-                    ]
-                ]
-            , div [ class "pcp-calculator-form-row" ]
-                [ label [ class "form-input-label" ]
-                    [ text "Your Deposit"
-                    , input [ type_ "text", name "your-deposit", placeholder ("i.e. £2,500"), onInput DepositChanged ] []
-                    ]
-                ]
-            , div [ class "pcp-calculator-form-row" ]
-                [ label [ class "form-input-label" ]
-                    [ text "Dealer Contribution"
-                    , input [ type_ "text", name "dealer-contribution", placeholder ("i.e. £1,000"), onInput DealerContributionChanged ] []
-                    ]
-                ]
-            , div [ class "pcp-calculator-form-row" ]
-                [ label [ class "form-input-label" ]
-                    [ text "Final Payment"
-                    , input [ type_ "text", name "final-payment", placeholder ("i.e. £1,000"), onInput FinalPaymentChanged ] []
-                    ]
-                ]
+            [ inputHtml CarPriceChanged "Car Price" "i.e. £20,000" "carPrice"
+            , inputHtml DepositChanged "Your Deposit" "i.e. £2,500" "customerDeposit"
+            , inputHtml DealerContributionChanged "Dealer Contribution" "i.e. £1,000" "dealerContribution"
+            , inputHtml FinalPaymentChanged "Final Payment" "i.e. £1,000" "finalPayment"
             ]
         , div [ class "pcp-calculator-form__amount-financed" ]
-            [ div [ class "pcp-finance-amount-financed__label" ] [ text "Amount to be financed" ]
+            [ div [ class "pcp-finance-amount-financed__label" ] [ text " Amount to be financed " ]
             , div [ class "pcp-finance-amount-financed__amount" ] [ text (formatPaymentCurrency (netLoan model)) ]
             ]
         , div [ class "pcp-calculator-form__ranges" ]
-            [ div [ class "pcp-calculator-form-row" ]
-                [ label [ class "pcp-calculator__range-label" ]
-                    [ text "Length of finance"
-                    , input [ type_ "range", name "length-of-finance", H.min "12", H.max "48", H.step "6", value <| toString model.financeLength, onInput FinanceLengthChanged ] []
-                    ]
-                , text <| toString model.financeLength
-                ]
-            , div [ class "pcp-calculator-form-row" ]
-                [ label [ class "pcp-calculator__range-label" ]
-                    [ text "Mileage agreement"
-                    , input [ type_ "range", name "mileage-agreement", H.min "5000", H.max "30000", H.step "5000", value <| toString model.mileageAgreement, onInput MileageAgreementChanged ] []
-                    ]
-                , text <| toString model.mileageAgreement
-                ]
-            , div [ class "pcp-calculator-form-row" ]
-                [ label [ class "pcp-calculator__range-label" ]
-                    [ text "APR %"
-                    , input [ type_ "range", name "apr", H.min "0.01", H.max "20.00", H.step "0.01", value <| toString model.apr, onInput AprChanged ] []
-                    ]
-                , text <| toString model.apr
-                ]
+            [ viewSlider model model.financeLengthSlider "Finance length" FinanceLengthEvent
+            , viewSlider model model.mileageAgreementSlider "Mileage agreement" MileageAgreementEvent
+            , viewSlider model model.aprSlider "APR" AprEvent
             ]
         , div [ class "pcp-calculator-form__estimated-monthly-payment" ]
             [ div [ class "pcp-calculator__payment-label" ] [ text "Estimated monthly payment" ]
@@ -190,7 +259,7 @@ netLoan inputs =
 
 monthlyRate : Model -> Float
 monthlyRate inputs =
-    (inputs.apr / 12) / 100
+    (inputs.aprSlider.value / 12) / 100
 
 
 monthlyPayment : Model -> Float
@@ -203,7 +272,7 @@ monthlyPayment inputs =
             netLoan inputs
     in
         (financeAmount * (monthlyAprRate))
-            / (1 - ((1 + monthlyAprRate) ^ toFloat (-inputs.financeLength)))
+            / (1 - ((1 + monthlyAprRate) ^ (-inputs.financeLengthSlider.value)))
             + (toFloat (inputs.finalPayment) * (monthlyAprRate))
 
 
@@ -221,12 +290,3 @@ integerUsLocale =
 formatPaymentCurrency : Float -> String
 formatPaymentCurrency number =
     "£" ++ format integerUsLocale number
-
-
-
--- Main
-
-
-main : Program Never Model Msg
-main =
-    Html.program { init = init, view = view, update = update, subscriptions = subscriptions }
