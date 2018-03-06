@@ -80,10 +80,10 @@ defaultMileageAgreementSlider =
 defaultAprSlider : SingleSlider.Model
 defaultAprSlider =
     SingleSlider.init
-        { min = 100
-        , max = 700
-        , step = 10
-        , value = 100
+        { min = 0.0
+        , max = 20.0
+        , step = 1
+        , value = 7.0
         }
 
 
