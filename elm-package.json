@@ -11,7 +11,8 @@
         "Core.NotificationMenu",
         "Core.Data.Make",
         "Core.Data.Model",
-        "Core.MakeModelMenu"
+        "Core.MakeModelMenu",
+        "Core.CurrencyFormatter"
     ],
     "dependencies": {
         "NoRedInk/elm-decode-pipeline": "3.0.0 <= v < 4.0.0",
