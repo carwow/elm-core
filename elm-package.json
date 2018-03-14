@@ -12,7 +12,8 @@
         "Core.Data.Make",
         "Core.Data.Model",
         "Core.MakeModelMenu",
-        "Core.CurrencyFormatter"
+        "Core.CurrencyFormatter",
+        "Core.PcpCalculator"
     ],
     "dependencies": {
         "NoRedInk/elm-decode-pipeline": "3.0.0 <= v < 4.0.0",
