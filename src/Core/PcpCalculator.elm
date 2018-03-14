@@ -170,7 +170,7 @@ view model =
         , div [ class "pcp-calculator-form__ranges" ]
             [ viewSlider model FinanceLengthChanged "Finance length" " months" "length-of-finance" { min = "12", max = "48", step = "6", value = toString model.financeLength }
             , viewSlider model MileageAgreementChanged "Mileage agreement" " miles" "mileage-agreement" { min = "5000", max = "30000", step = "5000", value = toString model.mileageAgreement }
-            , viewSlider model AprChanged "APR %" " %" "apr" { min = "0.0", max = "100.0", step = "0.05", value = toString model.apr }
+            , viewSlider model AprChanged "APR %" " %" "apr" { min = "0.0", max = "20.0", step = "0.05", value = toString model.apr }
             ]
         , div [ class "pcp-calculator-form__estimated-monthly-payment" ]
             [ div [ class "pcp-calculator__payment-label" ] [ text "Estimated monthly payment" ]
@@ -202,6 +202,8 @@ monthlyPayment inputs =
         financeAmount =
             netLoan inputs
     in
-        (financeAmount * (monthlyAprRate))
-            / (1 - ((1 + monthlyAprRate) ^ toFloat (-inputs.financeLength)))
-            + (toFloat (inputs.finalPayment) * (monthlyAprRate))
+        if inputs.apr == 0 then
+            financeAmount / (toFloat inputs.financeLength)
+        else
+            (financeAmount * monthlyAprRate)
+                / (1 - ((1 + monthlyAprRate) ^ (toFloat -inputs.financeLength)))
