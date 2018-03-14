@@ -138,8 +138,8 @@ viewSlider model message labelText valuePostfix className sliderProperties =
     div [ class "pcp-calculator-ranges-heading" ]
         [ div [ class "pcp-calculator-range-heading" ] [ div [ class "pcp-calculator-range__label" ] [ text labelText ], div [ class "pcp-calculator-range__value" ] [ text <| sliderProperties.value ++ valuePostfix ] ]
         , div [ class "form-input" ]
-            [ div [ class "input-slider" ]
-                [ input [ class "slider-value", type_ "range", name "length-of-finance", Html.Attributes.min sliderProperties.min, Html.Attributes.max sliderProperties.max, Html.Attributes.step sliderProperties.step, value sliderProperties.value, onInput message ] [] ]
+            [ div [ class "slider-container" ]
+                [ input [ class "pcp-slider", type_ "range", name "length-of-finance", Html.Attributes.min sliderProperties.min, Html.Attributes.max sliderProperties.max, Html.Attributes.step sliderProperties.step, value sliderProperties.value, onInput message ] [] ]
             ]
         ]
 
